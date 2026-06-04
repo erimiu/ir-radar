@@ -9,6 +9,7 @@ export default async function FeedPage() {
     supabase
       .from('items')
       .select('*, sources(*)')
+      .eq('is_saved', false)
       .order('rule_score', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(100),
