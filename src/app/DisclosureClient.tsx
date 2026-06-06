@@ -67,19 +67,24 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
   const [stockForm, setStockForm] = useState<StockFormState>(defaultForm())
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [readUrls, setReadUrls] = useState<Set<string>>(new Set(initialReadUrls))
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
+  const [activeTab, setActiveTab] = useState<'unread' | 'read'>('unread')
 
   const unreadCount = useMemo(
     () => disclosures.filter(d => !readUrls.has(d.document_url)).length,
     [disclosures, readUrls]
   )
 
+  const readCount = useMemo(
+    () => disclosures.filter(d => readUrls.has(d.document_url)).length,
+    [disclosures, readUrls]
+  )
+
   const dateGroups = useMemo(() => {
-    const filtered = showUnreadOnly
+    const filtered = activeTab === 'unread'
       ? disclosures.filter(d => !readUrls.has(d.document_url))
-      : disclosures
+      : disclosures.filter(d => readUrls.has(d.document_url))
     return groupByDate(filtered)
-  }, [disclosures, readUrls, showUnreadOnly])
+  }, [disclosures, readUrls, activeTab])
 
   const toggleRead = async (item: TdnetItem) => {
     const wasRead = readUrls.has(item.document_url)
@@ -170,16 +175,23 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
             <h1 className="text-xl font-bold tracking-tight text-primary">IR Radar</h1>
             <span className="text-xs text-sub">直近5日間</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex gap-1">
             <button
-              onClick={() => setShowUnreadOnly(v => !v)}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors ${
-                showUnreadOnly ? 'bg-primary text-white' : 'bg-line text-sub'
+              onClick={() => setActiveTab('unread')}
+              className={`flex-1 text-xs py-1.5 rounded-full transition-colors ${
+                activeTab === 'unread' ? 'bg-primary text-white' : 'bg-line text-sub'
               }`}
             >
-              未確認のみ
+              未確認 {unreadCount}
             </button>
-            <span className="text-xs text-sub">未確認 {unreadCount}件</span>
+            <button
+              onClick={() => setActiveTab('read')}
+              className={`flex-1 text-xs py-1.5 rounded-full transition-colors ${
+                activeTab === 'read' ? 'bg-primary text-white' : 'bg-line text-sub'
+              }`}
+            >
+              確認済み {readCount}
+            </button>
           </div>
         </div>
       </header>
@@ -363,7 +375,9 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
 
             {dateGroups.length === 0 && (
               <div className="text-center py-20 text-sub">
-                <p className="text-sm">未確認の開示はありません</p>
+                <p className="text-sm">
+                  {activeTab === 'unread' ? '未確認の開示はありません' : 'まだ確認済みの開示がありません'}
+                </p>
               </div>
             )}
           </div>
