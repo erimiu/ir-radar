@@ -97,7 +97,7 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
     })
 
     try {
-      await fetch('/api/tdnet-read', {
+      const res = await fetch('/api/tdnet-read', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -107,6 +107,7 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
           is_read: newIsRead,
         }),
       })
+      if (!res.ok) throw new Error(`${res.status}`)
     } catch {
       setReadUrls(prev => {
         const next = new Set(prev)
