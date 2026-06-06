@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { supabase } from '@/lib/supabase'
 
 export async function POST(req: Request) {
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
         if (e2) throw new Error(e2.message)
       }
 
+      revalidatePath('/calendar')
       return NextResponse.json({ id: existing.id, is_read })
     }
 
@@ -47,6 +49,7 @@ export async function POST(req: Request) {
       .single()
 
     if (!withCheckedAt.error) {
+      revalidatePath('/calendar')
       return NextResponse.json({ id: withCheckedAt.data.id, is_read })
     }
 
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
       .single()
 
     if (withoutCheckedAt.error) throw new Error(withoutCheckedAt.error.message)
+    revalidatePath('/calendar')
     return NextResponse.json({ id: withoutCheckedAt.data.id, is_read })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error'

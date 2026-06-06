@@ -1,5 +1,6 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日']
 
@@ -35,9 +36,15 @@ function buildCalendarCells(year: number, month: number): (number | null)[] {
 }
 
 export default function CalendarClient({ checkCounts, todayJST }: Props) {
+  const router = useRouter()
   const today = new Date(todayJST)
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
+
+  // Router Cache のキャッシュを破棄してサーバーから最新データを取得
+  useEffect(() => {
+    router.refresh()
+  }, [router])
 
   const cells = useMemo(() => buildCalendarCells(viewYear, viewMonth), [viewYear, viewMonth])
 
