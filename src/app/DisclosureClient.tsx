@@ -250,7 +250,15 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
                           {/* コンテンツ */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="text-xs font-semibold text-accent">{item.company_name}</span>
+                              <a
+                                href={`https://kabutan.jp/stock/?code=${item.company_code}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-semibold text-accent underline underline-offset-2"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {item.company_name}
+                              </a>
                               <span className="text-xs text-sub">{item.company_code}</span>
                               {item.markets_string && (
                                 <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">
