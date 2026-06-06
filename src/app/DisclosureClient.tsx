@@ -251,7 +251,7 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <a
-                                href={`https://kabutan.jp/stock/?code=${item.company_code}`}
+                                href={`https://kabutan.jp/stock/?code=${item.company_code.slice(0, 4)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs font-semibold text-accent underline underline-offset-2"
