@@ -36,58 +36,59 @@ function AddForm() {
 
   return (
     <div className="px-4 py-6">
+      <div className="h-0.5 bg-primary -mx-4 -mt-6 mb-6" />
       <div className="flex items-center gap-3 mb-6">
         <button
           onClick={() => router.back()}
-          className="text-gray-400 min-h-[44px] min-w-[44px] flex items-center"
+          className="text-sub min-h-[44px] min-w-[44px] flex items-center"
         >
           ← 戻る
         </button>
-        <h1 className="text-lg font-bold">記事を追加</h1>
+        <h1 className="text-lg font-bold text-primary">記事を追加</h1>
       </div>
 
-      <p className="text-sm text-gray-500 mb-5">
+      <p className="text-sm text-sub mb-5">
         公式サイトで読んだ記事のタイトルとURLを入力してください。
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            記事タイトル <span className="text-[#E63946]">*</span>
+          <label className="block text-sm font-medium text-[#1A2332] mb-1">
+            記事タイトル <span className="text-danger">*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
-            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#2D6A4F]"
+            className="w-full border border-line rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-accent bg-white"
             placeholder="例：東証、英文開示の義務化を2026年から適用"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            URL <span className="text-[#E63946]">*</span>
+          <label className="block text-sm font-medium text-[#1A2332] mb-1">
+            URL <span className="text-danger">*</span>
           </label>
           <input
             type="url"
             value={url}
             onChange={e => setUrl(e.target.value)}
             required
-            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#2D6A4F]"
+            className="w-full border border-line rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-accent bg-white"
             placeholder="https://..."
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[#1A2332] mb-1">
             ソース
-            <span className="text-xs text-gray-400 font-normal ml-2">任意</span>
+            <span className="text-xs text-sub font-normal ml-2">任意</span>
           </label>
           <select
             value={sourceId}
             onChange={e => setSourceId(e.target.value)}
-            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#2D6A4F] bg-white text-gray-700"
+            className="w-full border border-line rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-accent bg-white text-[#1A2332]"
           >
             <option value="">選択してください</option>
             {sources.map(s => (
@@ -101,7 +102,7 @@ function AddForm() {
         <button
           type="submit"
           disabled={loading || !title || !url}
-          className="w-full bg-[#2D6A4F] text-white rounded-2xl py-4 text-sm font-medium disabled:opacity-40 mt-2"
+          className="w-full bg-accent text-white rounded-2xl py-4 text-sm font-medium disabled:opacity-40 mt-2 hover:bg-primary transition-colors"
         >
           {loading ? '追加中...' : 'メモを書く →'}
         </button>

@@ -33,15 +33,6 @@ export default function SourcesClient({ initialSources }: Props) {
   })
   const [adding, setAdding] = useState(false)
 
-  const toggleSource = async (id: string, enabled: boolean) => {
-    setSources(prev => prev.map(s => (s.id === id ? { ...s, enabled } : s)))
-    await fetch(`/api/sources/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled }),
-    })
-  }
-
   const addSource = async (e: React.FormEvent) => {
     e.preventDefault()
     setAdding(true)
@@ -68,20 +59,21 @@ export default function SourcesClient({ initialSources }: Props) {
 
   return (
     <div className="px-4 py-6">
+      <div className="h-0.5 bg-primary -mx-4 -mt-6 mb-6" />
+
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold">ソース管理</h1>
+        <h1 className="text-xl font-bold tracking-tight text-primary">ソース</h1>
         <button
           onClick={() => setShowForm(v => !v)}
-          className="text-sm text-white bg-[#2D6A4F] rounded-xl px-4 min-h-[44px] flex items-center"
+          className="text-sm text-white bg-accent rounded-xl px-4 min-h-[44px] flex items-center hover:bg-primary transition-colors"
         >
           ＋ 追加
         </button>
       </div>
 
-      {/* 新規追加フォーム */}
       {showForm && (
-        <form onSubmit={addSource} className="bg-gray-50 rounded-2xl p-4 mb-6 space-y-3">
-          <h2 className="text-sm font-semibold text-[#1A1A1A]">新規ソース追加</h2>
+        <form onSubmit={addSource} className="bg-surface rounded-2xl p-4 mb-6 space-y-3 border border-line">
+          <h2 className="text-sm font-semibold text-[#1A2332]">新規ソース追加</h2>
 
           <input
             type="text"
@@ -89,7 +81,7 @@ export default function SourcesClient({ initialSources }: Props) {
             value={form.name}
             onChange={e => setForm(d => ({ ...d, name: e.target.value }))}
             required
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#2D6A4F]"
+            className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent bg-white"
           />
           <input
             type="url"
@@ -97,14 +89,14 @@ export default function SourcesClient({ initialSources }: Props) {
             value={form.url}
             onChange={e => setForm(d => ({ ...d, url: e.target.value }))}
             required
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#2D6A4F]"
+            className="w-full border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-accent bg-white"
           />
 
           <div className="grid grid-cols-2 gap-3">
             <select
               value={form.fetch_type}
               onChange={e => setForm(d => ({ ...d, fetch_type: e.target.value as FetchType }))}
-              className="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-[#2D6A4F] bg-white"
+              className="border border-line rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-accent bg-white"
             >
               <option value="link">LINK</option>
               <option value="rss">RSS</option>
@@ -112,7 +104,7 @@ export default function SourcesClient({ initialSources }: Props) {
             <select
               value={form.category}
               onChange={e => setForm(d => ({ ...d, category: e.target.value as Category }))}
-              className="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-[#2D6A4F] bg-white"
+              className="border border-line rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-accent bg-white"
             >
               {CATEGORIES.map(cat => (
                 <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
@@ -124,18 +116,18 @@ export default function SourcesClient({ initialSources }: Props) {
             <select
               value={form.tier}
               onChange={e => setForm(d => ({ ...d, tier: Number(e.target.value) }))}
-              className="border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-[#2D6A4F] bg-white"
+              className="border border-line rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-accent bg-white"
             >
               {[1, 2, 3, 4].map(t => (
                 <option key={t} value={t}>第{t}階層</option>
               ))}
             </select>
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <label className="flex items-center gap-2 text-sm text-sub cursor-pointer">
               <input
                 type="checkbox"
                 checked={form.is_company}
                 onChange={e => setForm(d => ({ ...d, is_company: e.target.checked }))}
-                className="w-4 h-4 accent-[#2D6A4F]"
+                className="w-4 h-4 accent-accent"
               />
               ベンチマーク企業
             </label>
@@ -145,14 +137,14 @@ export default function SourcesClient({ initialSources }: Props) {
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="flex-1 border border-gray-200 text-gray-600 rounded-xl py-3 text-sm"
+              className="flex-1 border border-line text-sub rounded-xl py-3 text-sm"
             >
               キャンセル
             </button>
             <button
               type="submit"
               disabled={adding}
-              className="flex-1 bg-[#2D6A4F] text-white rounded-xl py-3 text-sm disabled:opacity-40"
+              className="flex-1 bg-accent text-white rounded-xl py-3 text-sm disabled:opacity-40"
             >
               {adding ? '追加中...' : '追加'}
             </button>
@@ -160,56 +152,47 @@ export default function SourcesClient({ initialSources }: Props) {
         </form>
       )}
 
-      {/* 階層別ソース一覧 */}
       {byTier.map(({ tier, items }) => (
         <div key={tier} className="mb-6">
-          <p className="text-xs text-gray-400 font-medium mb-2">{TIER_LABELS[tier]}</p>
+          <p className="text-xs text-sub font-medium mb-3">{TIER_LABELS[tier]}</p>
           <div className="space-y-2">
             {items.map(source => (
-              <div
+              <a
                 key={source.id}
-                className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-sm"
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-surface border border-line rounded-2xl p-4 hover:border-accent transition-colors"
+                style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <span className="text-xs text-gray-400">
-                      {CATEGORY_LABELS[source.category]}
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">
+                    Tier {tier}
+                  </span>
+                  <span className="text-xs text-sub">
+                    {CATEGORY_LABELS[source.category]}
+                  </span>
+                  {source.is_company && (
+                    <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">
+                      企業
                     </span>
-                    <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                      {source.fetch_type.toUpperCase()}
-                    </span>
-                    {source.is_company && (
-                      <span className="text-xs bg-[#2D6A4F]/10 text-[#2D6A4F] px-2 py-0.5 rounded-full">
-                        企業
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm font-medium text-[#1A1A1A]">{source.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{source.url}</p>
+                  )}
                 </div>
-
-                {/* 有効/無効トグル */}
-                <button
-                  onClick={() => toggleSource(source.id, !source.enabled)}
-                  className={`flex-shrink-0 w-12 h-7 rounded-full transition-colors relative ${
-                    source.enabled ? 'bg-[#2D6A4F]' : 'bg-gray-200'
-                  }`}
-                  aria-label={source.enabled ? '無効にする' : '有効にする'}
-                >
-                  <span
-                    className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                      source.enabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
+                <p className="text-sm font-semibold text-primary mb-1">{source.name}</p>
+                {source.purpose && (
+                  <p className="text-xs text-sub leading-relaxed">{source.purpose}</p>
+                )}
+                {source.when_to_check && (
+                  <p className="text-xs text-accent mt-0.5 leading-relaxed">{source.when_to_check}</p>
+                )}
+              </a>
             ))}
           </div>
         </div>
       ))}
 
       {sources.length === 0 && !showForm && (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-sub">
           <p className="text-sm">ソースが登録されていません</p>
           <p className="text-xs mt-1">「＋ 追加」から登録してください</p>
         </div>

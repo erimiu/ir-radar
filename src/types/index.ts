@@ -11,6 +11,8 @@ export interface Source {
   is_company: boolean
   enabled: boolean
   created_at: string
+  purpose?: string | null
+  when_to_check?: string | null
 }
 
 export interface Item {
@@ -38,6 +40,8 @@ export interface Memo {
   synced_to_notion: boolean
   notion_page_url: string | null
   created_at: string
+  company_name?: string | null
+  securities_code?: string | null
 }
 
 export const CATEGORY_LABELS: Record<Category | 'all', string> = {

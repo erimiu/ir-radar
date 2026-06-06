@@ -93,52 +93,49 @@ export default function MemoClient({ item, existingMemo }: Props) {
 
   return (
     <div className="px-4 py-6">
-      {/* 戻るボタン */}
+      <div className="h-0.5 bg-primary -mx-4 -mt-6 mb-6" />
+
       <div className="flex items-center gap-3 mb-4">
         <button
           onClick={() => router.back()}
-          className="text-gray-400 min-h-[44px] min-w-[44px] flex items-center"
+          className="text-sub min-h-[44px] min-w-[44px] flex items-center"
         >
           ← 戻る
         </button>
-        <h1 className="text-lg font-bold">メモ</h1>
+        <h1 className="text-lg font-bold text-primary">メモ</h1>
       </div>
 
-      {/* 記事情報 */}
-      <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-        <p className="text-xs text-gray-400 mb-1">{item.sources?.name ?? '手動追加'}</p>
-        <p className="text-sm font-medium text-[#1A1A1A] leading-snug">{item.title}</p>
+      <div className="bg-surface rounded-2xl p-4 mb-6 border border-line">
+        <p className="text-xs text-sub mb-1">{item.sources?.name ?? '手動追加'}</p>
+        <p className="text-sm font-medium text-[#1A2332] leading-snug">{item.title}</p>
         <a
           href={item.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-[#2D6A4F] mt-1 block truncate"
+          className="text-xs text-accent mt-1 block truncate"
         >
           {item.url}
         </a>
       </div>
 
       <div className="space-y-5">
-        {/* メモ欄 */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">メモ</label>
+          <label className="block text-sm font-medium text-[#1A2332] mb-2">メモ</label>
           <textarea
             value={note}
             onChange={e => setNote(e.target.value)}
             rows={5}
-            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-[#2D6A4F] resize-none"
+            className="w-full border border-line rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-accent resize-none bg-white"
             placeholder="気づいたこと・要点・自社への示唆など..."
           />
         </div>
 
-        {/* カテゴリ（マルチセレクト） */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-[#1A2332] mb-2">
             カテゴリ
-            <span className="text-xs text-gray-400 font-normal ml-2">複数選択可</span>
+            <span className="text-xs text-sub font-normal ml-2">複数選択可</span>
           </label>
 
-          {/* 定義済みカテゴリ */}
           <div className="flex flex-wrap gap-2 mb-3">
             {PREDEFINED_CATEGORIES.map(cat => (
               <button
@@ -146,8 +143,8 @@ export default function MemoClient({ item, existingMemo }: Props) {
                 onClick={() => toggleCategory(cat)}
                 className={`text-xs px-3 py-2 rounded-full min-h-[36px] transition-colors ${
                   categories.includes(cat)
-                    ? 'bg-[#2D6A4F] text-white'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-accent text-white'
+                    : 'bg-line text-sub'
                 }`}
               >
                 {cat}
@@ -155,7 +152,6 @@ export default function MemoClient({ item, existingMemo }: Props) {
             ))}
           </div>
 
-          {/* フリー入力（その他） */}
           <div className="flex gap-2">
             <input
               type="text"
@@ -163,19 +159,18 @@ export default function MemoClient({ item, existingMemo }: Props) {
               onChange={e => setCustomInput(e.target.value)}
               onKeyDown={handleCustomKeyDown}
               placeholder="その他（Enterで追加）"
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#2D6A4F]"
+              className="flex-1 border border-line rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-accent bg-white"
             />
             <button
               type="button"
               onClick={addCustomTag}
               disabled={!customInput.trim()}
-              className="text-sm text-white bg-[#2D6A4F] rounded-xl px-4 min-h-[44px] disabled:opacity-40"
+              className="text-sm text-white bg-accent rounded-xl px-4 min-h-[44px] disabled:opacity-40"
             >
               追加
             </button>
           </div>
 
-          {/* 選択済みタグ（定義済み以外のカスタムタグ） */}
           {categories.filter(c => !PREDEFINED_CATEGORIES.includes(c)).length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {categories
@@ -183,12 +178,12 @@ export default function MemoClient({ item, existingMemo }: Props) {
                 .map(tag => (
                   <span
                     key={tag}
-                    className="flex items-center gap-1 text-xs bg-[#2D6A4F]/10 text-[#2D6A4F] px-3 py-1.5 rounded-full"
+                    className="flex items-center gap-1 text-xs bg-soft text-accent px-3 py-1.5 rounded-full"
                   >
                     {tag}
                     <button
                       onClick={() => removeCategory(tag)}
-                      className="leading-none hover:text-[#E63946]"
+                      className="leading-none hover:text-danger"
                       aria-label={`${tag}を削除`}
                     >
                       ×
@@ -199,9 +194,8 @@ export default function MemoClient({ item, existingMemo }: Props) {
           )}
         </div>
 
-        {/* 重要度（セレクト） */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">重要度</label>
+          <label className="block text-sm font-medium text-[#1A2332] mb-2">重要度</label>
           <div className="flex gap-3">
             {IMPORTANCE_OPTIONS.map(opt => (
               <button
@@ -210,11 +204,11 @@ export default function MemoClient({ item, existingMemo }: Props) {
                 className={`flex-1 py-3 rounded-2xl text-sm font-medium transition-colors ${
                   importance === opt
                     ? opt === '高'
-                      ? 'bg-[#E63946] text-white'
+                      ? 'bg-danger text-white'
                       : opt === '中'
                       ? 'bg-orange-400 text-white'
-                      : 'bg-gray-400 text-white'
-                    : 'bg-gray-100 text-gray-600'
+                      : 'bg-sub text-white'
+                    : 'bg-line text-sub'
                 }`}
               >
                 {opt}
@@ -223,25 +217,23 @@ export default function MemoClient({ item, existingMemo }: Props) {
           </div>
         </div>
 
-        {/* メモ保存ボタン */}
         <button
           onClick={saveMemo}
           disabled={saving}
-          className="w-full border border-[#2D6A4F] text-[#2D6A4F] rounded-2xl py-4 text-sm font-medium disabled:opacity-40"
+          className="w-full border border-accent text-accent rounded-2xl py-4 text-sm font-medium disabled:opacity-40"
         >
           {saving ? '保存中...' : savedMsg || 'メモを保存'}
         </button>
 
-        {/* Notion保存 */}
         {notionSaved ? (
-          <div className="bg-[#2D6A4F]/10 rounded-2xl p-4 text-center">
-            <p className="text-sm text-[#2D6A4F] font-medium">✓ Notionに保存済み</p>
+          <div className="bg-soft rounded-2xl p-4 text-center">
+            <p className="text-sm text-accent font-medium">Notionに保存済み</p>
             {notionUrl && (
               <a
                 href={notionUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-[#2D6A4F] underline mt-1 block"
+                className="text-xs text-accent underline mt-1 block"
               >
                 Notionで開く
               </a>
@@ -251,7 +243,7 @@ export default function MemoClient({ item, existingMemo }: Props) {
           <button
             onClick={saveToNotion}
             disabled={notionSaving}
-            className="w-full bg-[#2D6A4F] text-white rounded-2xl py-4 text-sm font-medium disabled:opacity-40"
+            className="w-full bg-accent text-white rounded-2xl py-4 text-sm font-medium disabled:opacity-40 hover:bg-primary transition-colors"
           >
             {notionSaving ? 'Notionに保存中...' : 'Notionに保存'}
           </button>

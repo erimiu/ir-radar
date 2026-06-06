@@ -2,13 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-bg: #FFFFFF;
+  --color-surface: #F7F9FC;
+  --color-primary: #1B3A5B;
+  --color-accent: #2E6FB7;
+  --color-accent-soft: #E8F0FA;
+  --color-text: #1A2332;
+  --color-text-sub: #6B7785;
+  --color-border: #E3E8EF;
+  --color-danger: #C0392B;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background-color: #ffffff;
-  color: #1a1a1a;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
 }
 
 .scrollbar-hide::-webkit-scrollbar {

@@ -1,34 +1,57 @@
-import { supabase } from '@/lib/supabase'
-import FeedClient from './FeedClient'
-import type { Item, Source } from '@/types'
+import DisclosureClient from './DisclosureClient'
 
 export const dynamic = 'force-dynamic'
 
-export default async function FeedPage() {
-  const [itemsRes, memoItemsRes, sourcesRes] = await Promise.all([
-    supabase
-      .from('items')
-      .select('*, sources(*)')
-      .order('rule_score', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(100),
-    supabase
-      .from('memos')
-      .select('item_id'),
-    supabase
-      .from('sources')
-      .select('*')
-      .eq('enabled', true)
-      .order('tier', { ascending: true })
-      .order('name', { ascending: true }),
-  ])
-
-  // memosテーブルに存在するitem_idをすべてフィードから除外
-  const memoItemIds = new Set((memoItemsRes.data ?? []).map(m => m.item_id))
-  const items: Item[] = (itemsRes.data ?? []).filter(item => !memoItemIds.has(item.id))
-
-  const sources: Source[] = sourcesRes.data ?? []
-  const linkSources = sources.filter(s => s.fetch_type === 'link')
-
-  return <FeedClient items={items} linkSources={linkSources} />
+export interface TdnetItem {
+  id: string
+  pubdate: string
+  company_code: string
+  company_name: string
+  title: string
+  document_url: string
+  markets_string: string
 }
+
+interface TdnetRaw {
+  Tdnet: {
+    id: string
+    pubdate: string
+    company_code: string
+    company_name: string
+    title: string
+    document_url: string
+    markets_string: string
+  }
+}
+
+async function fetchDisclosures(limit = 30): Promise<TdnetItem[] | null> {
+  try {
+    const res = await fetch(
+      `https://webapi.yanoshin.jp/webapi/tdnet/list/recent.json?limit=${limit}`,
+      { cache: 'no-store' }
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    return (data.items as TdnetRaw[]).map(i => ({
+      id: i.Tdnet.id,
+      pubdate: i.Tdnet.pubdate,
+      company_code: i.Tdnet.company_code,
+      company_name: i.Tdnet.company_name,
+      title: i.Tdnet.title,
+      document_url: i.Tdnet.document_url,
+      markets_string: i.Tdnet.markets_string,
+    }))
+  } catch {
+    return null
+  }
+}
+
+export default async function DisclosurePage() {
+  const disclosures = await fetchDisclosures(30)
+  return <DisclosureClient initialDisclosures={disclosures} />
+}
+
+// 将来の拡張: ベンチマーク銘柄に絞る場合は
+// https://webapi.yanoshin.jp/webapi/tdnet/list/{証券コード}.json を使う
+// （複数銘柄はハイフン区切り: 7203-9984-4689.json）
+// 銘柄リストを設定画面で管理できるようにする構想
