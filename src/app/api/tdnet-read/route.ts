@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(req: Request) {
   const { url, title, pubdate, is_read } = await req.json()
+  const checkedAt = is_read ? new Date().toISOString() : null
 
   try {
     const { data: existing } = await supabase
@@ -12,7 +13,10 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (existing) {
-      await supabase.from('items').update({ is_read }).eq('id', existing.id)
+      await supabase
+        .from('items')
+        .update({ is_read, checked_at: checkedAt })
+        .eq('id', existing.id)
       return NextResponse.json({ id: existing.id, is_read })
     }
 
@@ -26,6 +30,7 @@ export async function POST(req: Request) {
         rule_score: 0,
         is_read,
         is_saved: false,
+        checked_at: checkedAt,
       })
       .select('id')
       .single()
