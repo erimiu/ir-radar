@@ -65,15 +65,35 @@ async function fetchReadUrls(): Promise<string[]> {
   return (data ?? []).map(i => i.url as string)
 }
 
-export default async function DisclosurePage() {
-  const [disclosures, readUrls] = await Promise.all([
-    fetchDisclosures(),
-    fetchReadUrls(),
-  ])
-  return <DisclosureClient initialDisclosures={disclosures} initialReadUrls={readUrls} />
+async function fetchSavedLaterUrls(): Promise<string[]> {
+  const { data } = await supabase
+    .from('items')
+    .select('url')
+    .is('source_id', null)
+    .eq('saved_for_later', true)
+  return (data ?? []).map(i => i.url as string)
 }
 
-// 将来の拡張: ベンチマーク銘柄に絞る場合は
-// https://webapi.yanoshin.jp/webapi/tdnet/list/{証券コード}.json を使う
-// （複数銘柄はハイフン区切り: 7203-9984-4689.json）
-// 銘柄リストを設定画面で管理できるようにする構想
+async function fetchBenchmarkCodes(): Promise<string[]> {
+  const { data } = await supabase
+    .from('benchmark_companies')
+    .select('securities_code')
+  return (data ?? []).map(i => i.securities_code as string)
+}
+
+export default async function DisclosurePage() {
+  const [disclosures, readUrls, savedLaterUrls, benchmarkCodes] = await Promise.all([
+    fetchDisclosures(),
+    fetchReadUrls(),
+    fetchSavedLaterUrls(),
+    fetchBenchmarkCodes(),
+  ])
+  return (
+    <DisclosureClient
+      initialDisclosures={disclosures}
+      initialReadUrls={readUrls}
+      initialSavedLaterUrls={savedLaterUrls}
+      benchmarkCodes={benchmarkCodes}
+    />
+  )
+}

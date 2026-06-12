@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import type { TdnetItem } from './page'
 
 const PREDEFINED_CATEGORIES = ['IRトレンド', '開示', '規制', '市場', '投資', '海外']
@@ -24,6 +25,8 @@ const defaultForm = (): StockFormState => ({
 interface Props {
   initialDisclosures: TdnetItem[] | null
   initialReadUrls: string[]
+  initialSavedLaterUrls: string[]
+  benchmarkCodes: string[]
 }
 
 function getDateLabel(dateStr: string): string {
@@ -60,31 +63,46 @@ function formatTime(pubdate: string) {
   }
 }
 
-export default function DisclosureClient({ initialDisclosures, initialReadUrls }: Props) {
+export default function DisclosureClient({
+  initialDisclosures,
+  initialReadUrls,
+  initialSavedLaterUrls,
+  benchmarkCodes,
+}: Props) {
   const [disclosures] = useState<TdnetItem[]>(initialDisclosures ?? [])
   const [fetchFailed] = useState(initialDisclosures === null)
   const [openStockId, setOpenStockId] = useState<string | null>(null)
   const [stockForm, setStockForm] = useState<StockFormState>(defaultForm())
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
   const [readUrls, setReadUrls] = useState<Set<string>>(new Set(initialReadUrls))
-  const [activeTab, setActiveTab] = useState<'unread' | 'read'>('unread')
+  const [savedLaterUrls, setSavedLaterUrls] = useState<Set<string>>(new Set(initialSavedLaterUrls))
+  const [benchmarkSet] = useState<Set<string>>(new Set(benchmarkCodes))
+  const [activeTab, setActiveTab] = useState<'unread' | 'later'>('unread')
+  const [showAll, setShowAll] = useState(false)
 
-  const unreadCount = useMemo(
-    () => disclosures.filter(d => !readUrls.has(d.document_url)).length,
-    [disclosures, readUrls]
+  const unprocessedCount = useMemo(
+    () => disclosures.filter(d => !readUrls.has(d.document_url) && !savedLaterUrls.has(d.document_url)).length,
+    [disclosures, readUrls, savedLaterUrls]
   )
 
-  const readCount = useMemo(
-    () => disclosures.filter(d => readUrls.has(d.document_url)).length,
-    [disclosures, readUrls]
+  const laterCount = useMemo(
+    () => disclosures.filter(d => savedLaterUrls.has(d.document_url)).length,
+    [disclosures, savedLaterUrls]
   )
 
   const dateGroups = useMemo(() => {
-    const filtered = activeTab === 'unread'
-      ? disclosures.filter(d => !readUrls.has(d.document_url))
-      : disclosures.filter(d => readUrls.has(d.document_url))
+    let filtered: TdnetItem[]
+    if (activeTab === 'later') {
+      filtered = disclosures.filter(d => savedLaterUrls.has(d.document_url))
+    } else if (showAll) {
+      filtered = disclosures
+    } else {
+      filtered = disclosures.filter(
+        d => !readUrls.has(d.document_url) && !savedLaterUrls.has(d.document_url)
+      )
+    }
     return groupByDate(filtered)
-  }, [disclosures, readUrls, activeTab])
+  }, [disclosures, readUrls, savedLaterUrls, activeTab, showAll])
 
   const toggleRead = async (item: TdnetItem) => {
     const wasRead = readUrls.has(item.document_url)
@@ -112,6 +130,37 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
       setReadUrls(prev => {
         const next = new Set(prev)
         wasRead ? next.add(item.document_url) : next.delete(item.document_url)
+        return next
+      })
+    }
+  }
+
+  const toggleSavedLater = async (item: TdnetItem) => {
+    const wasSaved = savedLaterUrls.has(item.document_url)
+    const newSavedLater = !wasSaved
+
+    setSavedLaterUrls(prev => {
+      const next = new Set(prev)
+      newSavedLater ? next.add(item.document_url) : next.delete(item.document_url)
+      return next
+    })
+
+    try {
+      const res = await fetch('/api/tdnet-later', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: item.document_url,
+          title: item.title,
+          pubdate: item.pubdate,
+          saved_for_later: newSavedLater,
+        }),
+      })
+      if (!res.ok) throw new Error(`${res.status}`)
+    } catch {
+      setSavedLaterUrls(prev => {
+        const next = new Set(prev)
+        wasSaved ? next.add(item.document_url) : next.delete(item.document_url)
         return next
       })
     }
@@ -174,25 +223,45 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
         <div className="px-4 pt-3 pb-3">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-xl font-bold tracking-tight text-primary">IR Radar</h1>
-            <span className="text-xs text-sub">直近5日間</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-sub">直近5日間</span>
+              <Link href="/settings" className="text-sub hover:text-primary" aria-label="設定">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </Link>
+            </div>
           </div>
-          <div className="flex gap-1">
+
+          {/* タブ */}
+          <div className="flex gap-1 items-center">
             <button
-              onClick={() => setActiveTab('unread')}
+              onClick={() => { setActiveTab('unread'); setShowAll(false) }}
               className={`flex-1 text-xs py-1.5 rounded-full transition-colors ${
                 activeTab === 'unread' ? 'bg-primary text-white' : 'bg-line text-sub'
               }`}
             >
-              未確認 {unreadCount}
+              未処理 {unprocessedCount}
             </button>
             <button
-              onClick={() => setActiveTab('read')}
+              onClick={() => setActiveTab('later')}
               className={`flex-1 text-xs py-1.5 rounded-full transition-colors ${
-                activeTab === 'read' ? 'bg-primary text-white' : 'bg-line text-sub'
+                activeTab === 'later' ? 'bg-primary text-white' : 'bg-line text-sub'
               }`}
             >
-              確認済み {readCount}
+              あとで読む {laterCount}
             </button>
+            {activeTab === 'unread' && (
+              <button
+                onClick={() => setShowAll(s => !s)}
+                className={`ml-1 text-[10px] px-2.5 py-1.5 rounded-full flex-shrink-0 transition-colors ${
+                  showAll ? 'bg-accent/10 text-accent border border-accent/30' : 'bg-line text-sub'
+                }`}
+              >
+                {showAll ? '絞り込む' : '全て表示'}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -220,26 +289,36 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
                 </p>
                 <div className="space-y-2">
                   {items.map(item => {
+                    const code4 = item.company_code.slice(0, 4)
                     const isRead = readUrls.has(item.document_url)
+                    const isSavedLater = savedLaterUrls.has(item.document_url)
                     const isStocked = savedIds.has(item.id)
+                    const isBenchmark = benchmarkSet.has(code4)
+
                     return (
                       <div
                         key={item.id}
-                        className={`bg-surface rounded-2xl border border-line p-4 transition-opacity ${
-                          isRead && !isStocked ? 'opacity-50' : ''
+                        className={`bg-surface rounded-2xl p-4 transition-opacity ${
+                          isBenchmark
+                            ? 'border-2 border-accent'
+                            : 'border border-line'
+                        } ${
+                          isRead && !isStocked && !isSavedLater ? 'opacity-50' : ''
                         }`}
-                        style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+                        style={{
+                          boxShadow: isBenchmark
+                            ? '0 1px 6px rgba(46,111,183,0.18)'
+                            : '0 1px 3px rgba(27,58,91,0.06)',
+                        }}
                       >
                         <div className="flex items-start gap-3">
-                          {/* 確認済みチェックボックス */}
+                          {/* 既読チェックボックス */}
                           <button
                             onClick={() => toggleRead(item)}
                             className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                              isRead
-                                ? 'bg-accent border-accent'
-                                : 'border-line bg-white'
+                              isRead ? 'bg-accent border-accent' : 'border-line bg-white'
                             }`}
-                            aria-label={isRead ? '未確認に戻す' : '確認済みにする'}
+                            aria-label={isRead ? '未処理に戻す' : '既読にする'}
                           >
                             {isRead && (
                               <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +331,7 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <a
-                                href={`https://kabutan.jp/stock/?code=${item.company_code.slice(0, 4)}`}
+                                href={`https://kabutan.jp/stock/?code=${code4}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs font-semibold text-accent underline underline-offset-2"
@@ -260,10 +339,15 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
                               >
                                 {item.company_name}
                               </a>
-                              <span className="text-xs text-sub">{item.company_code}</span>
+                              <span className="text-xs text-sub">{code4}</span>
                               {item.markets_string && (
                                 <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">
                                   {item.markets_string}
+                                </span>
+                              )}
+                              {isBenchmark && (
+                                <span className="text-xs bg-accent text-white px-2 py-0.5 rounded-full font-medium">
+                                  BM
                                 </span>
                               )}
                               {isStocked && (
@@ -283,13 +367,41 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
                             <p className="text-xs text-sub mt-1">{formatTime(item.pubdate)}</p>
                           </div>
 
-                          {/* ストックボタン */}
-                          <button
-                            onClick={() => openStock(item.id)}
-                            className="flex-shrink-0 text-xs text-accent border border-accent rounded-xl px-3 min-w-[60px] h-[36px] flex items-center justify-center hover:bg-soft transition-colors"
-                          >
-                            ストック
-                          </button>
+                          {/* アクションボタン */}
+                          <div className="flex-shrink-0 flex flex-col gap-1.5 items-end">
+                            {/* あとで読むボタン */}
+                            <button
+                              onClick={() => toggleSavedLater(item)}
+                              className={`text-xs border rounded-xl px-2.5 h-7 flex items-center gap-1 transition-colors ${
+                                isSavedLater
+                                  ? 'bg-accent border-accent text-white'
+                                  : 'border-line text-sub hover:border-accent hover:text-accent bg-white'
+                              }`}
+                              aria-label={isSavedLater ? 'あとで読むを解除' : 'あとで読む'}
+                            >
+                              <svg
+                                className="w-3 h-3"
+                                fill={isSavedLater ? 'currentColor' : 'none'}
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                />
+                              </svg>
+                              <span>あとで</span>
+                            </button>
+                            {/* ストックボタン */}
+                            <button
+                              onClick={() => openStock(item.id)}
+                              className="text-xs text-accent border border-accent rounded-xl px-2.5 h-7 flex items-center justify-center hover:bg-soft transition-colors"
+                            >
+                              ストック
+                            </button>
+                          </div>
                         </div>
 
                         {/* インラインストックフォーム */}
@@ -385,7 +497,11 @@ export default function DisclosureClient({ initialDisclosures, initialReadUrls }
             {dateGroups.length === 0 && (
               <div className="text-center py-20 text-sub">
                 <p className="text-sm">
-                  {activeTab === 'unread' ? '未確認の開示はありません' : 'まだ確認済みの開示がありません'}
+                  {activeTab === 'later'
+                    ? 'あとで読む開示がありません'
+                    : showAll
+                    ? '開示がありません'
+                    : '未処理の開示はありません'}
                 </p>
               </div>
             )}
