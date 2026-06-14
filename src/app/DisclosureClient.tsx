@@ -5,7 +5,7 @@ import type { TdnetItem } from './page'
 
 const PREDEFINED_CATEGORIES = [
   '決算説明資料', '株主優待', '配当', '自社株買い',
-  'プライム移行', '株式分割', '有事対応', 'IR活動',
+  'プライム移行', '株式分割', '有事対応', 'IR活動', 'その他',
 ]
 const IMPORTANCE_OPTIONS = ['高', '中', '低']
 
