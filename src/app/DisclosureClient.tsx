@@ -3,7 +3,10 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import type { TdnetItem } from './page'
 
-const PREDEFINED_CATEGORIES = ['IRトレンド', '開示', '規制', '市場', '投資', '海外']
+const PREDEFINED_CATEGORIES = [
+  '決算説明資料', '株主優待', '配当', '自社株買い',
+  'プライム移行', '株式分割', '有事対応', 'IR活動',
+]
 const IMPORTANCE_OPTIONS = ['高', '中', '低']
 
 interface StockFormState {
