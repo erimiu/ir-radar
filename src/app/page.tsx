@@ -1,5 +1,6 @@
 import DisclosureClient from './DisclosureClient'
 import { supabase } from '@/lib/supabase'
+import * as https from 'https'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,15 +34,27 @@ function getDateRange() {
   return { startDate: fmt(start), endDate: fmt(today) }
 }
 
+function httpsGet(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      if (res.statusCode !== 200) {
+        reject(new Error(`HTTP ${res.statusCode}`))
+        return
+      }
+      let body = ''
+      res.on('data', (chunk: Buffer) => { body += chunk })
+      res.on('end', () => resolve(body))
+    }).on('error', reject)
+  })
+}
+
 async function fetchDisclosures(): Promise<TdnetItem[] | null> {
   const { startDate, endDate } = getDateRange()
   try {
-    const res = await fetch(
-      `https://webapi.yanoshin.jp/webapi/tdnet/list/${startDate}-${endDate}.json`,
-      { cache: 'no-store' }
+    const body = await httpsGet(
+      `https://webapi.yanoshin.jp/webapi/tdnet/list/${startDate}-${endDate}.json`
     )
-    if (!res.ok) return null
-    const data = await res.json()
+    const data = JSON.parse(body)
     return (data.items as TdnetRaw[]).map(i => ({
       id: i.Tdnet.id,
       pubdate: i.Tdnet.pubdate,
