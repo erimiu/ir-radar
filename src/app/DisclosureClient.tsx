@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import type { TdnetItem } from './page'
 
@@ -26,7 +26,6 @@ const defaultForm = (): StockFormState => ({
 })
 
 interface Props {
-  initialDisclosures: TdnetItem[] | null
   initialReadUrls: string[]
   initialSavedLaterUrls: string[]
   benchmarkCodes: string[]
@@ -67,13 +66,13 @@ function formatTime(pubdate: string) {
 }
 
 export default function DisclosureClient({
-  initialDisclosures,
   initialReadUrls,
   initialSavedLaterUrls,
   benchmarkCodes,
 }: Props) {
-  const [disclosures] = useState<TdnetItem[]>(initialDisclosures ?? [])
-  const [fetchFailed] = useState(initialDisclosures === null)
+  const [disclosures, setDisclosures] = useState<TdnetItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [fetchFailed, setFetchFailed] = useState(false)
   const [openStockId, setOpenStockId] = useState<string | null>(null)
   const [stockForm, setStockForm] = useState<StockFormState>(defaultForm())
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
@@ -83,6 +82,35 @@ export default function DisclosureClient({
   const [activeTab, setActiveTab] = useState<'unread' | 'later'>('unread')
   const [showAll, setShowAll] = useState(false)
   const [savedLaterErrorIds, setSavedLaterErrorIds] = useState<Set<string>>(new Set())
+
+  const loadDisclosures = useCallback(async () => {
+    setLoading(true)
+    setFetchFailed(false)
+    try {
+      const res = await fetch('/api/tdnet')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (!data.items || !Array.isArray(data.items)) throw new Error('invalid response')
+      const items: TdnetItem[] = data.items.map((i: { Tdnet: TdnetItem }) => ({
+        id: i.Tdnet.id,
+        pubdate: i.Tdnet.pubdate,
+        company_code: i.Tdnet.company_code,
+        company_name: i.Tdnet.company_name,
+        title: i.Tdnet.title,
+        document_url: i.Tdnet.document_url,
+        markets_string: i.Tdnet.markets_string,
+      }))
+      setDisclosures(items)
+    } catch {
+      setFetchFailed(true)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadDisclosures()
+  }, [loadDisclosures])
 
   const unprocessedCount = useMemo(
     () => disclosures.filter(d => !readUrls.has(d.document_url) && !savedLaterUrls.has(d.document_url)).length,
@@ -292,9 +320,20 @@ export default function DisclosureClient({
       </header>
 
       <div className="flex-1 px-4 py-3">
-        {fetchFailed ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+            <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs text-sub">開示情報を取得中...</p>
+          </div>
+        ) : fetchFailed ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
             <p className="text-sm text-sub">適時開示を取得できませんでした</p>
+            <button
+              onClick={loadDisclosures}
+              className="text-sm text-white bg-accent px-4 py-2 rounded-xl hover:bg-primary transition-colors"
+            >
+              再試行
+            </button>
             <a
               href="https://www.release.tdnet.info/inbs/I_main_00.html"
               target="_blank"
