@@ -13,22 +13,20 @@ export interface TdnetItem {
   markets_string: string
 }
 
-async function fetchReadUrls(): Promise<string[]> {
+async function fetchTdnetItemFlags(): Promise<{ readUrls: string[]; savedLaterUrls: string[] }> {
+  // items テーブルを1回のクエリで既読・あとで読む両方を取得（DBラウンドトリップ削減）
   const { data } = await supabase
     .from('items')
-    .select('url')
+    .select('url, is_read, saved_for_later')
     .is('source_id', null)
-    .eq('is_read', true)
-  return (data ?? []).map(i => i.url as string)
-}
-
-async function fetchSavedLaterUrls(): Promise<string[]> {
-  const { data } = await supabase
-    .from('items')
-    .select('url')
-    .is('source_id', null)
-    .eq('saved_for_later', true)
-  return (data ?? []).map(i => i.url as string)
+    .or('is_read.eq.true,saved_for_later.eq.true')
+  const readUrls: string[] = []
+  const savedLaterUrls: string[] = []
+  for (const i of data ?? []) {
+    if (i.is_read) readUrls.push(i.url as string)
+    if (i.saved_for_later) savedLaterUrls.push(i.url as string)
+  }
+  return { readUrls, savedLaterUrls }
 }
 
 async function fetchBenchmarkCodes(): Promise<string[]> {
@@ -39,9 +37,8 @@ async function fetchBenchmarkCodes(): Promise<string[]> {
 }
 
 export default async function DisclosurePage() {
-  const [readUrls, savedLaterUrls, benchmarkCodes] = await Promise.all([
-    fetchReadUrls(),
-    fetchSavedLaterUrls(),
+  const [{ readUrls, savedLaterUrls }, benchmarkCodes] = await Promise.all([
+    fetchTdnetItemFlags(),
     fetchBenchmarkCodes(),
   ])
   return (
