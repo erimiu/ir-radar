@@ -1,51 +1,52 @@
-import DisclosureClient from './DisclosureClient'
+import HomeClient from './HomeClient'
 import { supabase } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-export interface TdnetItem {
-  id: string
-  pubdate: string
-  company_code: string
-  company_name: string
-  title: string
-  document_url: string
-  markets_string: string
+export interface HomeStats {
+  memoCount: number
+  starCount: number
+  nextStarIn: number
+  savedLaterCount: number
+  streak: number
 }
 
-async function fetchTdnetItemFlags(): Promise<{ readUrls: string[]; savedLaterUrls: string[] }> {
-  // items テーブルを1回のクエリで既読・あとで読む両方を取得（DBラウンドトリップ削減）
-  const { data } = await supabase
-    .from('items')
-    .select('url, is_read, saved_for_later')
-    .is('source_id', null)
-    .or('is_read.eq.true,saved_for_later.eq.true')
-  const readUrls: string[] = []
-  const savedLaterUrls: string[] = []
-  for (const i of data ?? []) {
-    if (i.is_read) readUrls.push(i.url as string)
-    if (i.saved_for_later) savedLaterUrls.push(i.url as string)
+function calcStreak(dates: string[]): number {
+  if (dates.length === 0) return 0
+  const uniqueDays = Array.from(new Set(dates.map(d => d.slice(0, 10))))
+    .sort((a, b) => b.localeCompare(a))
+  if (uniqueDays.length === 0) return 0
+
+  const now = new Date()
+  const todayStr = now.toISOString().slice(0, 10)
+  const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().slice(0, 10)
+
+  if (uniqueDays[0] !== todayStr && uniqueDays[0] !== yesterdayStr) return 0
+
+  let streak = 1
+  for (let i = 1; i < uniqueDays.length; i++) {
+    const prevMs = new Date(uniqueDays[i - 1]).getTime()
+    const currMs = new Date(uniqueDays[i]).getTime()
+    if (Math.round((prevMs - currMs) / 86400000) === 1) streak++
+    else break
   }
-  return { readUrls, savedLaterUrls }
+  return streak
 }
 
-async function fetchBenchmarkCodes(): Promise<string[]> {
-  const { data } = await supabase
-    .from('benchmark_companies')
-    .select('securities_code')
-  return (data ?? []).map(i => i.securities_code as string)
-}
-
-export default async function DisclosurePage() {
-  const [{ readUrls, savedLaterUrls }, benchmarkCodes] = await Promise.all([
-    fetchTdnetItemFlags(),
-    fetchBenchmarkCodes(),
+export default async function HomePage() {
+  const [memoResult, savedLaterResult, memoDatesResult] = await Promise.all([
+    supabase.from('memos').select('*', { count: 'exact', head: true }).eq('synced_to_notion', true),
+    supabase.from('items').select('*', { count: 'exact', head: true }).eq('saved_for_later', true),
+    supabase.from('memos').select('created_at').eq('synced_to_notion', true).order('created_at', { ascending: false }),
   ])
-  return (
-    <DisclosureClient
-      initialReadUrls={readUrls}
-      initialSavedLaterUrls={savedLaterUrls}
-      benchmarkCodes={benchmarkCodes}
-    />
-  )
+
+  const memoCount = memoResult.count ?? 0
+  const savedLaterCount = savedLaterResult.count ?? 0
+  const streak = calcStreak(memoDatesResult.data?.map(m => m.created_at as string) ?? [])
+  const remainder = memoCount % 10
+  const starCount = Math.floor(memoCount / 10)
+  const nextStarIn = remainder === 0 ? 10 : 10 - remainder
+
+  const stats: HomeStats = { memoCount, starCount, nextStarIn, savedLaterCount, streak }
+  return <HomeClient stats={stats} />
 }

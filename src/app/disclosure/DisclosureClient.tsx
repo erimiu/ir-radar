@@ -29,6 +29,7 @@ interface Props {
   initialReadUrls: string[]
   initialSavedLaterUrls: string[]
   benchmarkCodes: string[]
+  initialTab?: 'unread' | 'later'
 }
 
 function getDateLabel(dateStr: string): string {
@@ -69,6 +70,7 @@ export default function DisclosureClient({
   initialReadUrls,
   initialSavedLaterUrls,
   benchmarkCodes,
+  initialTab = 'unread',
 }: Props) {
   const [disclosures, setDisclosures] = useState<TdnetItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,7 +81,7 @@ export default function DisclosureClient({
   const [readUrls, setReadUrls] = useState<Set<string>>(new Set(initialReadUrls))
   const [savedLaterUrls, setSavedLaterUrls] = useState<Set<string>>(new Set(initialSavedLaterUrls))
   const [benchmarkSet] = useState<Set<string>>(new Set(benchmarkCodes))
-  const [activeTab, setActiveTab] = useState<'unread' | 'later'>('unread')
+  const [activeTab, setActiveTab] = useState<'unread' | 'later'>(initialTab)
   const [showAll, setShowAll] = useState(false)
   const [savedLaterErrorIds, setSavedLaterErrorIds] = useState<Set<string>>(new Set())
 
@@ -189,20 +191,17 @@ export default function DisclosureClient({
         }),
       })
       if (!res.ok) {
-        // APIのエラー本文を取得してログ出力
         const body = await res.json().catch(() => ({}))
         const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`
         console.error('[あとで読む] 保存失敗:', msg)
         throw new Error(msg)
       }
     } catch (e) {
-      // ロールバック
       setSavedLaterUrls(prev => {
         const next = new Set(prev)
         wasSaved ? next.add(item.document_url) : next.delete(item.document_url)
         return next
       })
-      // ★ボタンをエラー状態に3秒間表示
       setSavedLaterErrorIds(prev => new Set(prev).add(item.id))
       setTimeout(() => {
         setSavedLaterErrorIds(prev => {
@@ -211,7 +210,6 @@ export default function DisclosureClient({
           return next
         })
       }, 3000)
-      // エラーメッセージがDB列不存在の場合はSQLの実行を促す
       const msg = e instanceof Error ? e.message : ''
       if (msg.includes('saved_for_later') || msg.includes('column')) {
         alert(`「あとで読む」の保存に失敗しました。\n\nSupabaseで以下のSQLを実行してください：\nALTER TABLE items ADD COLUMN saved_for_later BOOLEAN NOT NULL DEFAULT FALSE;`)
@@ -275,7 +273,7 @@ export default function DisclosureClient({
         <div className="h-0.5 bg-primary" />
         <div className="px-4 pt-3 pb-3">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl font-bold tracking-tight text-primary">IR Radar</h1>
+            <h1 className="text-xl font-bold tracking-tight text-primary">IR Skill Up</h1>
             <div className="flex items-center gap-3">
               <span className="text-xs text-sub">直近5日間</span>
               <Link href="/settings" className="text-sub hover:text-primary" aria-label="設定">

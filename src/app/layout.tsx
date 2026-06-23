@@ -3,7 +3,7 @@ import './globals.css'
 import BottomNav from '@/components/BottomNav'
 
 export const metadata: Metadata = {
-  title: 'IR Radar',
+  title: 'IR Skill Up',
   description: 'IRトレンドを隙間時間にインプット',
 }
 
