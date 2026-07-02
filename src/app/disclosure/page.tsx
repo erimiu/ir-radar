@@ -13,6 +13,10 @@ export interface TdnetItem {
   markets_string: string
 }
 
+export interface ThemedItem extends TdnetItem {
+  categories: string[]
+}
+
 async function fetchTdnetItemFlags(): Promise<{ readUrls: string[]; savedLaterUrls: string[] }> {
   const { data } = await supabase
     .from('items')
@@ -28,28 +32,17 @@ async function fetchTdnetItemFlags(): Promise<{ readUrls: string[]; savedLaterUr
   return { readUrls, savedLaterUrls }
 }
 
-async function fetchBenchmarkCodes(): Promise<string[]> {
-  const { data } = await supabase
-    .from('benchmark_companies')
-    .select('securities_code')
-  return (data ?? []).map(i => i.securities_code as string)
-}
-
 export default async function DisclosurePage({
   searchParams,
 }: {
   searchParams: { tab?: string }
 }) {
-  const [{ readUrls, savedLaterUrls }, benchmarkCodes] = await Promise.all([
-    fetchTdnetItemFlags(),
-    fetchBenchmarkCodes(),
-  ])
-  const initialTab = searchParams.tab === 'later' ? 'later' : 'unread'
+  const { readUrls, savedLaterUrls } = await fetchTdnetItemFlags()
+  const initialTab = searchParams.tab === 'later' ? 'later' : 'briefing'
   return (
     <DisclosureClient
       initialReadUrls={readUrls}
       initialSavedLaterUrls={savedLaterUrls}
-      benchmarkCodes={benchmarkCodes}
       initialTab={initialTab}
     />
   )

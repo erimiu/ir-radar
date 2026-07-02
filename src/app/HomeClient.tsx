@@ -4,7 +4,7 @@ import Link from 'next/link'
 import type { HomeStats } from './page'
 
 export default function HomeClient({ stats }: { stats: HomeStats }) {
-  const [disclosureTotal, setDisclosureTotal] = useState<number | null>(null)
+  const [briefingCounts, setBriefingCounts] = useState<{ benchmark: number; themed: number } | null>(null)
   const [showStarCelebration, setShowStarCelebration] = useState(false)
 
   useEffect(() => {
@@ -20,12 +20,13 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
   }, [stats.starCount])
 
   useEffect(() => {
-    fetch('/api/tdnet')
+    fetch('/api/briefing')
       .then(r => r.json())
       .then(data => {
-        if (data.items && Array.isArray(data.items)) {
-          setDisclosureTotal(data.items.length)
-        }
+        setBriefingCounts({
+          benchmark: data.benchmark?.length ?? 0,
+          themed: data.themed?.length ?? 0,
+        })
       })
       .catch(() => {})
   }, [])
@@ -117,16 +118,18 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
 
       {/* メニューカード */}
       <div className="px-4 space-y-2.5">
-        {/* 今日の開示 */}
+        {/* 今日のブリーフィング */}
         <Link href="/disclosure" className="block active:opacity-90 transition-opacity">
           <div
             className="h-[90px] rounded-2xl flex items-center px-5 gap-4"
             style={{ background: 'linear-gradient(135deg, #1B3A5B 0%, #2E6FB7 100%)' }}
           >
             <div className="flex-1 min-w-0">
-              <p className="text-base font-semibold text-white leading-snug">今日の開示</p>
+              <p className="text-base font-semibold text-white leading-snug">今日のブリーフィング</p>
               <p className="text-xs text-white/70 mt-0.5">
-                {disclosureTotal !== null ? `新着 ${disclosureTotal}件` : '取得中...'}
+                {briefingCounts !== null
+                  ? `ベンチマーク ${briefingCounts.benchmark}件・テーマ ${briefingCounts.themed}件`
+                  : '取得中...'}
               </p>
             </div>
             <svg className="w-7 h-7 text-white/80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
