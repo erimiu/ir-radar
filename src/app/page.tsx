@@ -9,6 +9,7 @@ export interface HomeStats {
   nextStarIn: number
   savedLaterCount: number
   streak: number
+  knownCompanyCount: number
 }
 
 function calcStreak(dates: string[]): number {
@@ -34,19 +35,21 @@ function calcStreak(dates: string[]): number {
 }
 
 export default async function HomePage() {
-  const [memoResult, savedLaterResult, memoDatesResult] = await Promise.all([
+  const [memoResult, savedLaterResult, memoDatesResult, knownCompanyResult] = await Promise.all([
     supabase.from('memos').select('*', { count: 'exact', head: true }).eq('synced_to_notion', true),
     supabase.from('items').select('*', { count: 'exact', head: true }).eq('saved_for_later', true),
     supabase.from('memos').select('created_at').eq('synced_to_notion', true).order('created_at', { ascending: false }),
+    supabase.from('company_notes').select('*', { count: 'exact', head: true }),
   ])
 
   const memoCount = memoResult.count ?? 0
   const savedLaterCount = savedLaterResult.count ?? 0
+  const knownCompanyCount = knownCompanyResult.count ?? 0
   const streak = calcStreak(memoDatesResult.data?.map(m => m.created_at as string) ?? [])
   const remainder = memoCount % 10
   const starCount = Math.floor(memoCount / 10)
   const nextStarIn = remainder === 0 ? 10 : 10 - remainder
 
-  const stats: HomeStats = { memoCount, starCount, nextStarIn, savedLaterCount, streak }
+  const stats: HomeStats = { memoCount, starCount, nextStarIn, savedLaterCount, streak, knownCompanyCount }
   return <HomeClient stats={stats} />
 }

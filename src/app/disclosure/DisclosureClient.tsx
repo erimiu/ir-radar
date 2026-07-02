@@ -318,15 +318,13 @@ export default function DisclosureClient({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <a
-                href={`https://kabutan.jp/stock/?code=${code4}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`/company/${code4}`}
                 className="text-xs font-semibold text-accent underline underline-offset-2"
                 onClick={e => e.stopPropagation()}
               >
                 {item.company_name}
-              </a>
+              </Link>
               <span className="text-xs text-sub">{code4}</span>
               {item.markets_string && (
                 <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">

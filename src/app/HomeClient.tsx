@@ -48,9 +48,9 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
         </p>
       </header>
 
-      {/* 達成サマリー */}
+      {/* 達成サマリー（2×2グリッド） */}
       <div className="px-4 mb-3">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <div className="bg-white rounded-xl p-3 text-center" style={{ border: '0.5px solid #E3E8EF' }}>
             <p
               className="text-[1.75rem] font-semibold text-primary leading-none mb-1.5"
@@ -59,6 +59,15 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
               {stats.memoCount}
             </p>
             <p className="text-[10px] text-sub">学びカード</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center" style={{ border: '0.5px solid #E3E8EF' }}>
+            <p
+              className="text-[1.75rem] font-semibold text-primary leading-none mb-1.5"
+              style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+            >
+              {stats.knownCompanyCount}
+            </p>
+            <p className="text-[10px] text-sub">知っている会社</p>
           </div>
           <div className="bg-white rounded-xl p-3 text-center" style={{ border: '0.5px solid #E3E8EF' }}>
             <p
