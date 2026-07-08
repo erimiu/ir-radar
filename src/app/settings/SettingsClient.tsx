@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import type { BenchmarkCompany } from './page'
+import type { BenchmarkCompany, ThemeFilter } from './page'
 
 interface Company {
   code: string
@@ -11,10 +11,12 @@ interface Company {
 
 interface Props {
   initialCompanies: BenchmarkCompany[]
+  initialThemeFilters: ThemeFilter[]
 }
 
-export default function SettingsClient({ initialCompanies }: Props) {
+export default function SettingsClient({ initialCompanies, initialThemeFilters }: Props) {
   const [companies, setCompanies] = useState<BenchmarkCompany[]>(initialCompanies)
+  const [themeFilters, setThemeFilters] = useState<ThemeFilter[]>(initialThemeFilters)
 
   // 検索
   const [searchQuery, setSearchQuery] = useState('')
@@ -28,6 +30,11 @@ export default function SettingsClient({ initialCompanies }: Props) {
   const [manualCode, setManualCode] = useState('')
   const [manualName, setManualName] = useState('')
   const [adding, setAdding] = useState(false)
+
+  // テーマフィルタ追加
+  const [newCategory, setNewCategory] = useState('')
+  const [newKeyword, setNewKeyword] = useState('')
+  const [addingFilter, setAddingFilter] = useState(false)
 
   // 2文字以上で検索（300msデバウンス）
   useEffect(() => {
@@ -121,6 +128,48 @@ export default function SettingsClient({ initialCompanies }: Props) {
     if (res.ok) setCompanies(prev => prev.filter(c => c.id !== id))
   }
 
+  const toggleFilter = async (id: string, enabled: boolean) => {
+    setThemeFilters(prev => prev.map(f => f.id === id ? { ...f, enabled } : f))
+    await fetch(`/api/theme-filters/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    })
+  }
+
+  const deleteFilter = async (id: string) => {
+    const res = await fetch(`/api/theme-filters/${id}`, { method: 'DELETE' })
+    if (res.ok) setThemeFilters(prev => prev.filter(f => f.id !== id))
+  }
+
+  const addFilter = async () => {
+    if (!newCategory.trim() || !newKeyword.trim()) return
+    setAddingFilter(true)
+    try {
+      const res = await fetch('/api/theme-filters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCategory.trim(), keyword: newKeyword.trim() }),
+      })
+      const data = await res.json()
+      if (!data.error) {
+        setThemeFilters(prev => [...prev, data as ThemeFilter].sort((a, b) =>
+          a.category.localeCompare(b.category) || a.keyword.localeCompare(b.keyword)
+        ))
+        setNewCategory('')
+        setNewKeyword('')
+      }
+    } finally {
+      setAddingFilter(false)
+    }
+  }
+
+  const filtersByCategory = themeFilters.reduce<Record<string, ThemeFilter[]>>((acc, f) => {
+    if (!acc[f.category]) acc[f.category] = []
+    acc[f.category].push(f)
+    return acc
+  }, {})
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 bg-white z-10 border-b border-line">
@@ -135,7 +184,7 @@ export default function SettingsClient({ initialCompanies }: Props) {
         </div>
       </header>
 
-      <div className="px-4 py-4 space-y-6">
+      <div className="px-4 py-4 space-y-8">
         <div>
           <h2 className="text-sm font-semibold text-primary mb-1">ベンチマーク企業</h2>
           <p className="text-xs text-sub mb-4">
@@ -251,6 +300,82 @@ export default function SettingsClient({ initialCompanies }: Props) {
             {companies.length === 0 && (
               <p className="text-xs text-sub text-center py-6">まだ登録されていません</p>
             )}
+          </div>
+        </div>
+
+        {/* テーマフィルタ */}
+        <div>
+          <h2 className="text-sm font-semibold text-primary mb-1">テーマフィルタ</h2>
+          <p className="text-xs text-sub mb-4">
+            開示タイトルにキーワードが含まれる場合、ブリーフィングのテーマ合致セクションに表示します。
+          </p>
+
+          {Object.entries(filtersByCategory).map(([category, filters]) => (
+            <div key={category} className="mb-3">
+              <p className="text-xs font-semibold text-sub mb-1.5 px-1">{category}</p>
+              <div className="bg-surface rounded-2xl border border-line overflow-hidden"
+                style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}>
+                {filters.map((f, i) => (
+                  <div
+                    key={f.id}
+                    className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}
+                  >
+                    <button
+                      onClick={() => toggleFilter(f.id, !f.enabled)}
+                      className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${f.enabled ? 'bg-accent' : 'bg-line'}`}
+                      aria-label={f.enabled ? '無効にする' : '有効にする'}
+                    >
+                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${f.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                    </button>
+                    <span className={`flex-1 text-sm ${f.enabled ? 'text-primary' : 'text-sub line-through'}`}>
+                      {f.keyword}
+                    </span>
+                    <button
+                      onClick={() => deleteFilter(f.id)}
+                      className="text-xs text-danger/60 hover:text-danger transition-colors flex-shrink-0"
+                      aria-label="削除"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {themeFilters.length === 0 && (
+            <p className="text-xs text-sub text-center py-6">テーマフィルタが登録されていません</p>
+          )}
+
+          {/* 新規追加 */}
+          <div className="bg-surface rounded-2xl border border-line p-4 mt-3"
+            style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}>
+            <p className="text-xs font-medium text-sub mb-2">キーワードを追加</p>
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={newCategory}
+                onChange={e => setNewCategory(e.target.value)}
+                placeholder="カテゴリ（例：配当）"
+                className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-accent bg-white"
+              />
+              <input
+                type="text"
+                value={newKeyword}
+                onChange={e => setNewKeyword(e.target.value)}
+                placeholder="キーワード（例：増配）"
+                className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-accent bg-white"
+              />
+              <button
+                onClick={addFilter}
+                disabled={addingFilter || !newCategory.trim() || !newKeyword.trim()}
+                className="w-full bg-accent text-white rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 hover:bg-primary transition-colors"
+              >
+                {addingFilter ? '追加中...' : '追加する'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

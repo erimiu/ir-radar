@@ -10,11 +10,23 @@ export interface BenchmarkCompany {
   created_at: string
 }
 
-export default async function SettingsPage() {
-  const { data } = await supabase
-    .from('benchmark_companies')
-    .select('*')
-    .order('securities_code')
+export interface ThemeFilter {
+  id: string
+  category: string
+  keyword: string
+  enabled: boolean
+}
 
-  return <SettingsClient initialCompanies={(data ?? []) as BenchmarkCompany[]} />
+export default async function SettingsPage() {
+  const [{ data: benchmarkData }, { data: filterData }] = await Promise.all([
+    supabase.from('benchmark_companies').select('*').order('securities_code'),
+    supabase.from('theme_filters').select('id, category, keyword, enabled').order('category').order('keyword'),
+  ])
+
+  return (
+    <SettingsClient
+      initialCompanies={(benchmarkData ?? []) as BenchmarkCompany[]}
+      initialThemeFilters={(filterData ?? []) as ThemeFilter[]}
+    />
+  )
 }
