@@ -112,18 +112,17 @@ export default function DisclosureClient({
     setLaterLoading(true)
     setLaterFailed(false)
     try {
-      const res = await fetch('/api/tdnet')
+      const res = await fetch('/api/items/saved-later')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = await res.json()
-      if (!data.items || !Array.isArray(data.items)) throw new Error('invalid')
-      const items: TdnetItem[] = data.items.map((i: { Tdnet: TdnetItem }) => ({
-        id: i.Tdnet.id,
-        pubdate: i.Tdnet.pubdate,
-        company_code: i.Tdnet.company_code,
-        company_name: i.Tdnet.company_name,
-        title: i.Tdnet.title,
-        document_url: i.Tdnet.document_url,
-        markets_string: i.Tdnet.markets_string,
+      const data: { id: string; url: string; title: string; published_at: string }[] = await res.json()
+      const items: TdnetItem[] = data.map(d => ({
+        id: d.id,
+        pubdate: d.published_at ?? '',
+        company_code: '',
+        company_name: '',
+        title: d.title ?? '',
+        document_url: d.url,
+        markets_string: '',
       }))
       setAllDisclosures(items)
       setLaterLoaded(true)
@@ -150,13 +149,9 @@ export default function DisclosureClient({
     )
   }, [benchmark, themed, readUrls, savedLaterUrls])
 
-  // あとで読む件数・リスト
+  // あとで読む件数・リスト（DBから直接取得済みなのでフィルタ不要）
   const laterCount = savedLaterUrls.size
-  const laterItems = useMemo(
-    () => allDisclosures.filter(d => savedLaterUrls.has(d.document_url)),
-    [allDisclosures, savedLaterUrls]
-  )
-  const laterDateGroups = useMemo(() => groupByDate(laterItems), [laterItems])
+  const laterDateGroups = useMemo(() => groupByDate(allDisclosures), [allDisclosures])
 
   const toggleRead = async (item: TdnetItem) => {
     const wasRead = readUrls.has(item.document_url)
@@ -210,6 +205,10 @@ export default function DisclosureClient({
         const body = await res.json().catch(() => ({}))
         const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`
         throw new Error(msg)
+      }
+      // 解除時はリストからリアルタイムで除去
+      if (!newSavedLater) {
+        setAllDisclosures(prev => prev.filter(d => d.document_url !== item.document_url))
       }
     } catch (e) {
       setSavedLaterUrls(prev => {
