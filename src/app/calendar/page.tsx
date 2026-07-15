@@ -3,29 +3,21 @@ import CalendarClient from './CalendarClient'
 
 export const dynamic = 'force-dynamic'
 
-function toJSTDateStr(isoStr: string): string {
-  const d = new Date(new Date(isoStr).getTime() + 9 * 60 * 60 * 1000)
-  return d.toISOString().slice(0, 10)
-}
-
-async function fetchCheckCounts(): Promise<Record<string, number>> {
+async function fetchRecordCounts(): Promise<Record<string, number>> {
   const { data } = await supabase
-    .from('items')
-    .select('checked_at')
-    .not('checked_at', 'is', null)
-    .eq('is_read', true)
+    .from('record_cards')
+    .select('recorded_on')
 
   const counts: Record<string, number> = {}
-  for (const item of data ?? []) {
-    if (!item.checked_at) continue
-    const date = toJSTDateStr(item.checked_at as string)
+  for (const card of data ?? []) {
+    const date = card.recorded_on as string
     counts[date] = (counts[date] ?? 0) + 1
   }
   return counts
 }
 
 export default async function CalendarPage() {
-  const checkCounts = await fetchCheckCounts()
-  const todayJST = toJSTDateStr(new Date().toISOString())
+  const checkCounts = await fetchRecordCounts()
+  const todayJST = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
   return <CalendarClient checkCounts={checkCounts} todayJST={todayJST} />
 }

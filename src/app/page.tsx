@@ -4,23 +4,24 @@ import { supabase } from '@/lib/supabase'
 export const dynamic = 'force-dynamic'
 
 export interface HomeStats {
-  memoCount: number
+  newsCaseCount: number
+  connectionCount: number
+  companyCount: number
+  careerCount: number
+  streak: number
   starCount: number
   nextStarIn: number
-  savedLaterCount: number
-  streak: number
-  knownCompanyCount: number
+  todayCount: number
 }
 
 function calcStreak(dates: string[]): number {
   if (dates.length === 0) return 0
-  const uniqueDays = Array.from(new Set(dates.map(d => d.slice(0, 10))))
-    .sort((a, b) => b.localeCompare(a))
+  const uniqueDays = Array.from(new Set(dates)).sort((a, b) => b.localeCompare(a))
   if (uniqueDays.length === 0) return 0
 
-  const now = new Date()
-  const todayStr = now.toISOString().slice(0, 10)
-  const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().slice(0, 10)
+  const nowJST = new Date(new Date().getTime() + 9 * 60 * 60 * 1000)
+  const todayStr = nowJST.toISOString().slice(0, 10)
+  const yesterdayStr = new Date(nowJST.getTime() - 86400000).toISOString().slice(0, 10)
 
   if (uniqueDays[0] !== todayStr && uniqueDays[0] !== yesterdayStr) return 0
 
@@ -35,21 +36,39 @@ function calcStreak(dates: string[]): number {
 }
 
 export default async function HomePage() {
-  const [memoResult, savedLaterResult, memoDatesResult, knownCompanyResult] = await Promise.all([
-    supabase.from('memos').select('*', { count: 'exact', head: true }).eq('synced_to_notion', true),
-    supabase.from('items').select('*', { count: 'exact', head: true }).eq('saved_for_later', true),
-    supabase.from('memos').select('created_at').eq('synced_to_notion', true).order('created_at', { ascending: false }),
+  const todayStr = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+  const [memosResult, recordCardsResult, companyNotesResult] = await Promise.all([
+    supabase.from('memos').select('*', { count: 'exact', head: true }),
+    supabase.from('record_cards').select('card_type, recorded_on'),
     supabase.from('company_notes').select('*', { count: 'exact', head: true }),
   ])
 
-  const memoCount = memoResult.count ?? 0
-  const savedLaterCount = savedLaterResult.count ?? 0
-  const knownCompanyCount = knownCompanyResult.count ?? 0
-  const streak = calcStreak(memoDatesResult.data?.map(m => m.created_at as string) ?? [])
-  const remainder = memoCount % 10
-  const starCount = Math.floor(memoCount / 10)
+  const memoCount = memosResult.count ?? 0
+  const recordCards = recordCardsResult.data ?? []
+  const companyCount = companyNotesResult.count ?? 0
+
+  const newsCaseCount = memoCount + recordCards.filter(c => c.card_type === 'news_case').length
+  const connectionCount = recordCards.filter(c => c.card_type === 'connection').length
+  const careerCount = recordCards.filter(c => c.card_type === 'career').length
+  const todayCount = recordCards.filter(c => c.recorded_on === todayStr).length
+
+  const totalCards = memoCount + recordCards.length
+  const remainder = totalCards % 10
+  const starCount = Math.floor(totalCards / 10)
   const nextStarIn = remainder === 0 ? 10 : 10 - remainder
 
-  const stats: HomeStats = { memoCount, starCount, nextStarIn, savedLaterCount, streak, knownCompanyCount }
+  const streak = calcStreak(recordCards.map(c => c.recorded_on as string))
+
+  const stats: HomeStats = {
+    newsCaseCount,
+    connectionCount,
+    companyCount,
+    careerCount,
+    streak,
+    starCount,
+    nextStarIn,
+    todayCount,
+  }
   return <HomeClient stats={stats} />
 }
