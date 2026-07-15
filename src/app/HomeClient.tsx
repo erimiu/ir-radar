@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import RecordCardModal from './RecordCardModal'
 import type { HomeStats } from './page'
 
+const SERIF = "'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif"
+
 const MENU_CARDS = [
   {
     href: '/news',
@@ -28,7 +30,7 @@ const MENU_CARDS = [
   {
     href: '/feedback',
     title: '振り返りレポート',
-    sub: '週次・月次AIフィードバック',
+    sub: '週次・月次AIフィードバック＆カレンダー',
     img: '/photos/feedback.jpg',
   },
   {
@@ -38,6 +40,13 @@ const MENU_CARDS = [
     img: '/photos/career.jpg',
   },
 ]
+
+const STATS = [
+  { key: 'newsCaseCount', label: 'ニュース' },
+  { key: 'connectionCount', label: 'つながり' },
+  { key: 'companyCount', label: '会社' },
+  { key: 'careerCount', label: 'キャリア' },
+] as const
 
 export default function HomeClient({ stats }: { stats: HomeStats }) {
   const router = useRouter()
@@ -56,7 +65,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
     }
   }, [stats.starCount])
 
-  const displayStarSlots = Math.max(stats.starCount + 3, 5)
+  const displayStarSlots = Math.max(stats.starCount + 2, 4)
 
   const handleSaved = () => {
     setModalOpen(false)
@@ -64,110 +73,87 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: '#EEF3F8' }}>
+    <div className="min-h-screen pb-8" style={{ backgroundColor: '#F0F4F8' }}>
       {/* ヘッダー */}
-      <header className="pt-10 pb-6 text-center px-6">
+      <header className="pt-8 pb-4 text-center px-6">
         <h1
-          className="text-[2rem] text-primary tracking-[0.04em]"
-          style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif" }}
+          className="text-[1.75rem] text-primary tracking-[0.04em]"
+          style={{ fontFamily: SERIF }}
         >
           IR Skill Up
         </h1>
-        <p className="text-xs text-sub mt-2 tracking-[0.1em]">
+        <p className="text-[11px] text-sub mt-1 tracking-[0.08em]">
           わたしが出会ったものを預けるアプリ
         </p>
       </header>
 
-      {/* 数字サマリー 2×2 */}
-      <div className="px-4 mb-3">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white rounded-xl p-3 text-center" style={{ border: '0.5px solid #E3E8EF' }}>
-            <p
-              className="text-[1.75rem] font-semibold text-primary leading-none mb-1.5"
-              style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-            >
-              {stats.newsCaseCount}
-            </p>
-            <p className="text-[10px] text-sub">ニュース・事例</p>
-          </div>
-          <div className="bg-white rounded-xl p-3 text-center" style={{ border: '0.5px solid #E3E8EF' }}>
-            <p
-              className="text-[1.75rem] font-semibold text-primary leading-none mb-1.5"
-              style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-            >
-              {stats.connectionCount}
-            </p>
-            <p className="text-[10px] text-sub">つながり</p>
-          </div>
-          <div className="bg-white rounded-xl p-3 text-center" style={{ border: '0.5px solid #E3E8EF' }}>
-            <p
-              className="text-[1.75rem] font-semibold text-primary leading-none mb-1.5"
-              style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-            >
-              {stats.companyCount}
-            </p>
-            <p className="text-[10px] text-sub">知っている会社</p>
-          </div>
-          <div className="bg-white rounded-xl p-3 text-center" style={{ border: '0.5px solid #E3E8EF' }}>
-            <p
-              className="text-[1.75rem] font-semibold text-primary leading-none mb-1.5"
-              style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-            >
-              {stats.careerCount}
-            </p>
-            <p className="text-[10px] text-sub">キャリア</p>
-          </div>
+      {/* コンパクト数字サマリー */}
+      <div className="px-4 mb-2">
+        <div
+          className="bg-white rounded-xl px-4 py-2.5 flex items-center justify-between"
+          style={{ border: '0.5px solid #E3E8EF' }}
+        >
+          {STATS.map(({ key, label }) => (
+            <div key={key} className="flex flex-col items-center">
+              <span
+                className="text-[1.15rem] font-semibold text-primary leading-none"
+                style={{ fontFamily: SERIF }}
+              >
+                {stats[key]}
+              </span>
+              <span className="text-[9px] text-sub mt-0.5 whitespace-nowrap">{label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* スター表示 */}
+      {/* スター・連続日数コンパクト帯 */}
       <div className="px-4 mb-4">
-        <div className="bg-white rounded-xl px-4 py-3" style={{ border: '0.5px solid #E3E8EF' }}>
+        <div
+          className="bg-white rounded-xl px-3 py-2 flex items-center gap-2"
+          style={{ border: '0.5px solid #E3E8EF' }}
+        >
           {showStarCelebration && (
-            <p className="text-center text-accent text-xs mb-2 font-medium">
-              ★ 新しいスターを獲得しました！おめでとうございます
-            </p>
+            <span className="text-accent text-[10px] font-medium flex-shrink-0">
+              ★ 新しいスターを獲得！
+            </span>
           )}
-          <div className="flex items-center gap-3">
-            <div className="flex gap-0.5 flex-1 flex-wrap">
-              {Array.from({ length: displayStarSlots }).map((_, i) => (
-                <span
-                  key={i}
-                  className={`text-lg leading-none transition-colors ${
-                    i < stats.starCount
-                      ? showStarCelebration && i === stats.starCount - 1
-                        ? 'text-accent animate-bounce'
-                        : 'text-accent'
-                      : 'text-gray-200'
-                  }`}
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-            <div className="text-right flex-shrink-0">
-              <p className="text-[10px] text-sub leading-relaxed whitespace-nowrap">
-                連続{stats.streak}日<br />あと{stats.nextStarIn}件で次のスター
-              </p>
-            </div>
+          <div className="flex gap-0.5 flex-shrink-0">
+            {Array.from({ length: displayStarSlots }).map((_, i) => (
+              <span
+                key={i}
+                className={`text-sm leading-none ${
+                  i < stats.starCount
+                    ? showStarCelebration && i === stats.starCount - 1
+                      ? 'text-accent animate-bounce'
+                      : 'text-accent'
+                    : 'text-gray-200'
+                }`}
+              >
+                ★
+              </span>
+            ))}
           </div>
+          <span className="text-[10px] text-sub ml-auto whitespace-nowrap">
+            連続{stats.streak}日 · あと{stats.nextStarIn}件でスター
+          </span>
         </div>
       </div>
 
       {/* 今日の記録ボタン（主役） */}
-      <div className="px-4 mb-5">
+      <div className="px-4 mb-4">
         <button
           onClick={() => setModalOpen(true)}
-          className="w-full rounded-2xl px-5 py-5 text-left active:opacity-90 transition-opacity"
+          className="w-full rounded-2xl px-5 py-4 text-left active:opacity-90 transition-opacity"
           style={{ backgroundColor: '#1B3A5B' }}
         >
           <p
-            className="text-lg font-semibold text-white leading-snug"
-            style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+            className="text-base font-semibold text-white leading-snug"
+            style={{ fontFamily: SERIF }}
           >
             今日の記録
           </p>
-          <p className="text-sm text-white/70 mt-1">
+          <p className="text-xs text-white/70 mt-0.5">
             {stats.todayCount === 0
               ? '今日の気づきを残そう'
               : `今日は${stats.todayCount}枚記録済み`}
@@ -175,44 +161,56 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
         </button>
       </div>
 
-      {/* メニューカード5つ（フォトカード） */}
-      <div className="px-4 space-y-3">
+      {/* メニューカード5つ（My Coach風フォトカード） */}
+      <div className="px-4 space-y-2.5">
         {MENU_CARDS.map(card => (
           <Link key={card.href} href={card.href} className="block active:opacity-90 transition-opacity">
             <div
-              className="relative h-[140px] rounded-2xl overflow-hidden"
-              style={{ boxShadow: '0 1px 4px rgba(27,58,91,0.10)' }}
+              className="relative h-[112px] rounded-2xl overflow-hidden bg-white"
+              style={{ boxShadow: '0 1px 4px rgba(27,58,91,0.08)' }}
             >
-              <Image
-                src={card.img}
-                alt={card.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 512px) 100vw, 512px"
-              />
-              {/* 右側から白グラデーション（文字を読みやすく） */}
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    'linear-gradient(to right, rgba(255,255,255,0) 25%, rgba(255,255,255,0.82) 55%, rgba(255,255,255,0.97) 70%)',
-                }}
-              />
-              {/* テキスト：右寄せ */}
-              <div className="absolute inset-0 flex flex-col justify-center items-end pr-5">
+              {/* 左半分：写真 + 右へのグラデーション */}
+              <div className="absolute inset-y-0 left-0 w-[48%]">
+                <Image
+                  src={card.img}
+                  alt={card.title}
+                  fill
+                  className="object-cover"
+                  sizes="200px"
+                />
+                {/* 写真の右端から白へフェード */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      'linear-gradient(to right, transparent 40%, rgba(255,255,255,0.7) 75%, white 100%)',
+                  }}
+                />
+              </div>
+              {/* 右半分：白地にテキスト左揃え */}
+              <div className="absolute inset-y-0 right-0 w-[58%] flex flex-col justify-center pl-2 pr-5">
                 <p
-                  className="text-base font-semibold text-primary leading-snug text-right"
-                  style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+                  className="text-sm font-semibold leading-snug"
+                  style={{ color: '#1B3A5B', fontFamily: SERIF }}
                 >
                   {card.title}
                 </p>
-                <p className="text-[11px] text-sub mt-0.5 text-right leading-snug max-w-[160px]">
-                  {card.sub}
-                </p>
+                <p className="text-[11px] text-sub mt-0.5 leading-snug">{card.sub}</p>
               </div>
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* ソース・ブリーフィングへの控えめリンク */}
+      <div className="px-4 pt-5 pb-2 flex items-center justify-center gap-4">
+        <Link href="/sources" className="text-[11px] text-sub underline underline-offset-2">
+          情報ソース
+        </Link>
+        <span className="text-sub text-[11px]">·</span>
+        <Link href="/disclosure" className="text-[11px] text-sub underline underline-offset-2">
+          ブリーフィング
+        </Link>
       </div>
 
       {/* モーダル */}

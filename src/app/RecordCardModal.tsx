@@ -489,13 +489,35 @@ export default function RecordCardModal({ onClose, onSaved }: Props) {
       style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
+      {/* シート本体：固定高さで内部スクロール */}
       <div
-        className="bg-white rounded-t-3xl w-full max-w-lg mx-auto px-5 pt-5 pb-10"
-        style={{ maxHeight: '92vh', overflowY: 'auto' }}
+        className="bg-white rounded-t-3xl w-full max-w-lg mx-auto flex flex-col"
+        style={{ maxHeight: '92vh' }}
+        onClick={e => e.stopPropagation()}
       >
-        {/* ドラッグハンドル */}
-        <div className="w-10 h-1 bg-line rounded-full mx-auto mb-5" />
+        {/* 固定ヘッダー（ハンドル＋タイトル行） */}
+        <div className="flex-shrink-0 px-5 pt-4 pb-1">
+          <div className="w-10 h-1 bg-line rounded-full mx-auto mb-4" />
+          {!saved && selected !== null && (
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setSelected(null)}
+                className="text-sub text-sm min-w-[44px] min-h-[44px] flex items-center"
+              >
+                ← 戻る
+              </button>
+              <h2
+                className="text-base font-semibold text-primary"
+                style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+              >
+                {LABELS[selected]}
+              </h2>
+            </div>
+          )}
+        </div>
 
+        {/* スクロール可能なコンテンツ */}
+        <div className="flex-1 overflow-y-auto px-5 pb-10">
         {saved ? (
           /* 保存完了 */
           <div className="text-center py-12">
@@ -517,7 +539,7 @@ export default function RecordCardModal({ onClose, onSaved }: Props) {
             >
               今日の記録
             </h2>
-            <p className="text-xs text-sub mb-5">何を記録しますか？</p>
+            <p className="text-xs text-sub mb-4">何を記録しますか？</p>
             <div className="space-y-2.5">
               {TYPE_OPTIONS.map(opt => (
                 <button
@@ -539,28 +561,15 @@ export default function RecordCardModal({ onClose, onSaved }: Props) {
             </div>
           </>
         ) : (
-          /* 各フォーム */
+          /* 各フォーム（タイトルは固定ヘッダーに移動済み） */
           <>
-            <div className="flex items-center gap-2 mb-5">
-              <button
-                onClick={() => setSelected(null)}
-                className="text-sub text-sm min-w-[44px] min-h-[44px] flex items-center"
-              >
-                ← 戻る
-              </button>
-              <h2
-                className="text-base font-semibold text-primary"
-                style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-              >
-                {LABELS[selected]}
-              </h2>
-            </div>
             {selected === 'news_case' && <NewsCaseForm onClose={onClose} onSaved={handleSaved} />}
             {selected === 'connection' && <ConnectionForm onClose={onClose} onSaved={handleSaved} />}
             {selected === 'company' && <CompanyFormStep onClose={onClose} />}
             {selected === 'career' && <CareerForm onClose={onClose} onSaved={handleSaved} />}
           </>
         )}
+        </div>
       </div>
     </div>
   )
