@@ -1,11 +1,13 @@
 'use client'
 import { useState, useMemo } from 'react'
+import type { WeeklyReport } from './page'
 
 const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日']
 
 interface Props {
   checkCounts: Record<string, number>
   todayJST: string
+  weeklyReports: WeeklyReport[]
 }
 
 function calcStreak(checkCounts: Record<string, number>, todayJST: string): number {
@@ -31,7 +33,15 @@ function buildCalendarCells(year: number, month: number): (number | null)[] {
   return cells
 }
 
-export default function FeedbackClient({ checkCounts, todayJST }: Props) {
+function formatWeekLabel(weekStart: string): string {
+  const [y, m, d] = weekStart.split('-').map(Number)
+  const endDate = new Date(y, m - 1, d + 6)
+  const em = endDate.getMonth() + 1
+  const ed = endDate.getDate()
+  return `${y}年${m}月${d}日〜${em}月${ed}日`
+}
+
+export default function FeedbackClient({ checkCounts, todayJST, weeklyReports }: Props) {
   const today = new Date(todayJST)
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
@@ -66,12 +76,62 @@ export default function FeedbackClient({ checkCounts, todayJST }: Props) {
         </div>
       </header>
 
-      <div className="px-4 py-4 space-y-5">
+      <div className="px-4 py-4 space-y-6">
+
+        {/* 週次レポートセクション */}
+        <section>
+          <p className="text-xs font-medium text-sub tracking-widest mb-3">週次レポート</p>
+          {weeklyReports.length === 0 ? (
+            <div
+              className="bg-white rounded-2xl border border-line p-5 text-center"
+              style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+            >
+              <p className="text-2xl mb-2">🔮</p>
+              <p
+                className="text-sm font-semibold text-primary mb-1"
+                style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+              >
+                まだレポートがありません
+              </p>
+              <p className="text-xs text-sub leading-relaxed">
+                毎週月曜の朝、先週の記録をもとに<br />AIがおさらいを届けます。<br />
+                記録を積み上げていきましょう。
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {weeklyReports.map(report => (
+                <div
+                  key={report.id}
+                  className="bg-white rounded-2xl border border-line p-4"
+                  style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p
+                      className="text-xs font-semibold text-primary"
+                      style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+                    >
+                      {formatWeekLabel(report.week_start)}
+                    </p>
+                    {report.card_count > 0 && (
+                      <span className="text-[10px] bg-soft text-accent px-2 py-0.5 rounded-full">
+                        {report.card_count}枚の記録
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-[#1A2332] leading-relaxed whitespace-pre-wrap">
+                    {report.report}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
         {/* カレンダーセクション */}
         <section>
           <p className="text-xs font-medium text-sub tracking-widest mb-3">記録カレンダー</p>
 
-          {/* 統計ミニカード */}
           <div className="grid grid-cols-3 gap-2 mb-3">
             {[
               { label: '今日', value: todayTotal },
@@ -89,21 +149,14 @@ export default function FeedbackClient({ checkCounts, todayJST }: Props) {
             ))}
           </div>
 
-          {/* カレンダー本体 */}
           <div
             className="bg-white rounded-2xl border border-line overflow-hidden"
             style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-line">
-              <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center text-sub text-lg">
-                ‹
-              </button>
-              <span className="text-sm font-semibold text-primary">
-                {viewYear}年{viewMonth + 1}月
-              </span>
-              <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center text-sub text-lg">
-                ›
-              </button>
+              <button onClick={prevMonth} className="w-8 h-8 flex items-center justify-center text-sub text-lg">‹</button>
+              <span className="text-sm font-semibold text-primary">{viewYear}年{viewMonth + 1}月</span>
+              <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center text-sub text-lg">›</button>
             </div>
 
             <div className="grid grid-cols-7 border-b border-line">
@@ -170,27 +223,6 @@ export default function FeedbackClient({ checkCounts, todayJST }: Props) {
           </div>
         </section>
 
-        {/* 週次レポートセクション（準備中） */}
-        <section>
-          <p className="text-xs font-medium text-sub tracking-widest mb-3">週次レポート</p>
-          <div
-            className="bg-white rounded-2xl border border-line p-5 text-center"
-            style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
-          >
-            <p className="text-2xl mb-2">🔮</p>
-            <p
-              className="text-sm font-semibold text-primary mb-1"
-              style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-            >
-              準備中
-            </p>
-            <p className="text-xs text-sub leading-relaxed">
-              週次AIフィードバックは第2段階で実装予定です。<br />
-              記録を積み上げていきましょう。
-            </p>
-          </div>
-        </section>
-
         {/* 月次レポートセクション（準備中） */}
         <section className="pb-8">
           <p className="text-xs font-medium text-sub tracking-widest mb-3">月次コーチング</p>
@@ -210,6 +242,7 @@ export default function FeedbackClient({ checkCounts, todayJST }: Props) {
             </p>
           </div>
         </section>
+
       </div>
     </div>
   )

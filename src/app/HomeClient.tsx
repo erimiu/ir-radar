@@ -52,6 +52,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
   const router = useRouter()
   const [modalOpen, setModalOpen] = useState(false)
   const [showStarCelebration, setShowStarCelebration] = useState(false)
+  const [showReportBadge, setShowReportBadge] = useState(false)
 
   useEffect(() => {
     const key = 'ir_skillup_stars_v2'
@@ -64,6 +65,19 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
       return () => clearTimeout(t)
     }
   }, [stats.starCount])
+
+  useEffect(() => {
+    if (!stats.latestReportWeek) return
+    const seen = localStorage.getItem('ir_last_seen_weekly_report')
+    if (seen !== stats.latestReportWeek) setShowReportBadge(true)
+  }, [stats.latestReportWeek])
+
+  const dismissReportBadge = () => {
+    if (stats.latestReportWeek) {
+      localStorage.setItem('ir_last_seen_weekly_report', stats.latestReportWeek)
+    }
+    setShowReportBadge(false)
+  }
 
   const displayStarSlots = Math.max(stats.starCount + 2, 4)
 
@@ -138,6 +152,23 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
           </span>
         </div>
       </div>
+
+      {/* 週次レポートバッジ */}
+      {showReportBadge && (
+        <div className="px-4 mb-3">
+          <Link
+            href="/feedback"
+            onClick={dismissReportBadge}
+            className="flex items-center gap-2 bg-accent/10 border border-accent/25 rounded-xl px-4 py-2.5 active:opacity-80 transition-opacity"
+          >
+            <span className="text-base leading-none">📬</span>
+            <p className="text-xs font-medium text-accent flex-1">今週のおさらいが届きました</p>
+            <svg className="w-4 h-4 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      )}
 
       {/* 今日の記録ボタン（主役） */}
       <div className="px-4 mb-4">
