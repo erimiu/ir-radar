@@ -87,24 +87,23 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
         </p>
       </header>
 
-      {/* コンパクト数字サマリー */}
-      <div className="px-4 mb-2">
-        <div
-          className="bg-white rounded-xl px-4 py-2.5 flex items-center justify-between"
-          style={{ border: '0.5px solid #E3E8EF' }}
-        >
-          {STATS.map(({ key, label }) => (
-            <div key={key} className="flex flex-col items-center">
-              <span
-                className="text-[1.15rem] font-semibold text-primary leading-none"
-                style={{ fontFamily: SERIF }}
-              >
-                {stats[key]}
-              </span>
-              <span className="text-[9px] text-sub mt-0.5 whitespace-nowrap">{label}</span>
-            </div>
-          ))}
-        </div>
+      {/* コンパクト数字サマリー（4枚独立カード） */}
+      <div className="px-4 mb-2 flex gap-2">
+        {STATS.map(({ key, label }) => (
+          <div
+            key={key}
+            className="flex-1 bg-white rounded-xl py-2 flex flex-col items-center"
+            style={{ border: '0.5px solid #E3E8EF' }}
+          >
+            <span
+              className="text-[1.1rem] font-semibold text-primary leading-none"
+              style={{ fontFamily: SERIF }}
+            >
+              {stats[key]}
+            </span>
+            <span className="text-[8.5px] text-sub mt-0.5 whitespace-nowrap">{label}</span>
+          </div>
+        ))}
       </div>
 
       {/* スター・連続日数コンパクト帯 */}
@@ -170,7 +169,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
               style={{ boxShadow: '0 1px 4px rgba(27,58,91,0.08)' }}
             >
               {/* 左半分：写真 + 右へのグラデーション */}
-              <div className="absolute inset-y-0 left-0 w-[48%]">
+              <div className="absolute inset-y-0 left-0 w-[52%]">
                 <Image
                   src={card.img}
                   alt={card.title}
@@ -178,17 +177,17 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
                   className="object-cover"
                   sizes="200px"
                 />
-                {/* 写真の右端から白へフェード */}
+                {/* 写真の右端から白へフェード（早めに溶け込む） */}
                 <div
                   className="absolute inset-0"
                   style={{
                     background:
-                      'linear-gradient(to right, transparent 40%, rgba(255,255,255,0.7) 75%, white 100%)',
+                      'linear-gradient(to right, transparent 20%, rgba(255,255,255,0.75) 55%, white 82%)',
                   }}
                 />
               </div>
-              {/* 右半分：白地にテキスト左揃え */}
-              <div className="absolute inset-y-0 right-0 w-[58%] flex flex-col justify-center pl-2 pr-5">
+              {/* テキスト：白が完成した55%位置から開始 */}
+              <div className="absolute inset-y-0 flex flex-col justify-center pr-5" style={{ left: '54%', right: 0 }}>
                 <p
                   className="text-sm font-semibold leading-snug"
                   style={{ color: '#1B3A5B', fontFamily: SERIF }}
