@@ -107,7 +107,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
           <div
             key={key}
             className="flex-1 bg-white rounded-xl py-2 flex flex-col items-center"
-            style={{ border: '0.5px solid #E3E8EF' }}
+            style={{ boxShadow: '0 4px 16px rgba(27,58,91,0.10)' }}
           >
             <span
               className="text-[1.1rem] font-semibold text-primary leading-none"
@@ -124,7 +124,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
       <div className="px-4 mb-4">
         <div
           className="bg-white rounded-xl px-3 py-2 flex items-center gap-2"
-          style={{ border: '0.5px solid #E3E8EF' }}
+          style={{ boxShadow: '0 4px 16px rgba(27,58,91,0.10)' }}
         >
           {showStarCelebration && (
             <span className="text-accent text-[10px] font-medium flex-shrink-0">
@@ -175,7 +175,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
         <button
           onClick={() => setModalOpen(true)}
           className="w-full rounded-2xl px-5 py-4 text-left active:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#1B3A5B' }}
+          style={{ backgroundColor: '#1B3A5B', boxShadow: '0 4px 16px rgba(27,58,91,0.10)' }}
         >
           <p
             className="text-base font-semibold text-white leading-snug"
@@ -197,9 +197,9 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
           <Link key={card.href} href={card.href} className="block active:opacity-90 transition-opacity">
             <div
               className="relative h-[112px] rounded-2xl overflow-hidden bg-white"
-              style={{ boxShadow: '0 1px 4px rgba(27,58,91,0.08)' }}
+              style={{ boxShadow: '0 4px 16px rgba(27,58,91,0.10)' }}
             >
-              {/* 左半分：写真 + 右へのグラデーション */}
+              {/* 左側：写真（カード幅の52%） */}
               <div className="absolute inset-y-0 left-0 w-[52%]">
                 <Image
                   src={card.img}
@@ -208,12 +208,12 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
                   className="object-cover"
                   sizes="200px"
                 />
-                {/* 写真の右端から白へフェード（早めに溶け込む） */}
+                {/* 右端だけで短く白へ溶かす（div内75%まではクリア） */}
                 <div
                   className="absolute inset-0"
                   style={{
                     background:
-                      'linear-gradient(to right, transparent 20%, rgba(255,255,255,0.75) 55%, white 82%)',
+                      'linear-gradient(to right, transparent 72%, rgba(255,255,255,0.6) 85%, white 100%)',
                   }}
                 />
               </div>
