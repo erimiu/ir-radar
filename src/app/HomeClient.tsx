@@ -54,6 +54,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
   const [showStarCelebration, setShowStarCelebration] = useState(false)
   const [showReportBadge, setShowReportBadge] = useState(false)
   const [showMonthlyBadge, setShowMonthlyBadge] = useState(false)
+  const [briefingCount, setBriefingCount] = useState<number | null>(null)
 
   useEffect(() => {
     const key = 'ir_skillup_stars_v2'
@@ -92,6 +93,15 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
     }
     setShowMonthlyBadge(false)
   }
+
+  useEffect(() => {
+    fetch('/api/briefing')
+      .then(r => r.json())
+      .then(data => {
+        setBriefingCount((data.benchmark?.length ?? 0) + (data.themed?.length ?? 0))
+      })
+      .catch(() => {})
+  }, [])
 
   const displayStarSlots = Math.max(stats.starCount + 2, 4)
 
@@ -205,25 +215,37 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
         </div>
       )}
 
-      {/* 今日の記録ボタン（主役） */}
+      {/* 今日の記録 ＋ 情報を見る（2段ブロック） */}
       <div className="px-4 mb-4">
-        <button
-          onClick={() => setModalOpen(true)}
-          className="w-full rounded-2xl px-5 py-4 text-left active:opacity-90 transition-opacity"
-          style={{ backgroundColor: '#1B3A5B', boxShadow: '0 4px 16px rgba(27,58,91,0.10)' }}
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{ boxShadow: '0 4px 16px rgba(27,58,91,0.10)' }}
         >
-          <p
-            className="text-base font-semibold text-white leading-snug"
-            style={{ fontFamily: SERIF }}
+          {/* 上段: 今日の記録 */}
+          <button
+            onClick={() => setModalOpen(true)}
+            className="w-full px-5 py-4 text-left active:opacity-90 transition-opacity border-b border-white/10"
+            style={{ backgroundColor: '#1B3A5B' }}
           >
-            今日の記録
-          </p>
-          <p className="text-xs text-white/70 mt-0.5">
-            {stats.todayCount === 0
-              ? '今日の気づきを残そう'
-              : `今日は${stats.todayCount}枚記録済み`}
-          </p>
-        </button>
+            <p className="text-base font-semibold text-white leading-snug" style={{ fontFamily: SERIF }}>
+              今日の記録
+            </p>
+            <p className="text-xs text-white/70 mt-0.5">
+              {stats.todayCount === 0 ? '今日の気づきを残そう' : `今日は${stats.todayCount}枚記録済み`}
+            </p>
+          </button>
+          {/* 下段: 情報を見る */}
+          <Link
+            href="/disclosure"
+            className="flex items-center justify-between px-5 py-3 active:opacity-90 transition-opacity"
+            style={{ backgroundColor: '#2E6FB7' }}
+          >
+            <p className="text-sm font-medium text-white">情報を見る</p>
+            <p className="text-xs text-white/70">
+              {briefingCount !== null ? `新着 ${briefingCount}件 →` : '→'}
+            </p>
+          </Link>
+        </div>
       </div>
 
       {/* メニューカード5つ（My Coach風フォトカード） */}

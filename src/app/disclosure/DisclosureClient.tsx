@@ -2,28 +2,14 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import type { TdnetItem, ThemedItem } from './page'
+import RecordCardModal from '@/app/RecordCardModal'
 
-const PREDEFINED_CATEGORIES = [
-  '決算説明資料', '株主優待', '配当', '自社株買い',
-  'プライム移行', '株式分割', '有事対応', 'IR活動', 'その他',
-]
-const IMPORTANCE_OPTIONS = ['高', '中', '低']
-
-interface StockFormState {
-  note: string
-  categories: string[]
-  importance: string
-  saving: boolean
-  savedUrl: string | null
+interface Prefill {
+  title?: string
+  company?: { code: string; name: string } | null
+  url?: string
+  category?: string
 }
-
-const defaultForm = (): StockFormState => ({
-  note: '',
-  categories: [],
-  importance: '中',
-  saving: false,
-  savedUrl: null,
-})
 
 interface Props {
   initialReadUrls: string[]
@@ -65,7 +51,6 @@ function groupByDate(items: TdnetItem[]): { date: string; items: TdnetItem[] }[]
 }
 
 export default function DisclosureClient({
-  initialReadUrls,
   initialSavedLaterUrls,
   initialTab = 'briefing',
 }: Props) {
@@ -75,20 +60,19 @@ export default function DisclosureClient({
   const [briefingLoading, setBriefingLoading] = useState(true)
   const [briefingFailed, setBriefingFailed] = useState(false)
 
-  // あとで読む state（タブ切替時にレイジーロード）
+  // あとで読む state
   const [allDisclosures, setAllDisclosures] = useState<TdnetItem[]>([])
   const [laterLoading, setLaterLoading] = useState(false)
   const [laterFailed, setLaterFailed] = useState(false)
   const [laterLoaded, setLaterLoaded] = useState(false)
 
   // 共通 state
-  const [openStockId, setOpenStockId] = useState<string | null>(null)
-  const [stockForm, setStockForm] = useState<StockFormState>(defaultForm())
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
-  const [readUrls, setReadUrls] = useState<Set<string>>(new Set(initialReadUrls))
   const [savedLaterUrls, setSavedLaterUrls] = useState<Set<string>>(new Set(initialSavedLaterUrls))
   const [savedLaterErrorIds, setSavedLaterErrorIds] = useState<Set<string>>(new Set())
   const [activeTab, setActiveTab] = useState<'briefing' | 'later'>(initialTab)
+
+  // 記録フォーム state
+  const [recordPrefill, setRecordPrefill] = useState<Prefill | null>(null)
 
   const loadBriefing = useCallback(async () => {
     setBriefingLoading(true)
@@ -138,49 +122,8 @@ export default function DisclosureClient({
     if (tab === 'later' && !laterLoaded) loadAllDisclosures()
   }
 
-  // ブリーフィング完了チェック（全件が既読またはあとで読む済み）
-  const isComplete = useMemo(() => {
-    const allItems = [...benchmark, ...themed]
-    if (allItems.length === 0) return false
-    const seen = new Set<string>()
-    for (const item of allItems) seen.add(item.document_url)
-    return Array.from(seen).every(
-      url => readUrls.has(url) || savedLaterUrls.has(url)
-    )
-  }, [benchmark, themed, readUrls, savedLaterUrls])
-
-  // あとで読む件数・リスト（DBから直接取得済みなのでフィルタ不要）
   const laterCount = savedLaterUrls.size
   const laterDateGroups = useMemo(() => groupByDate(allDisclosures), [allDisclosures])
-
-  const toggleRead = async (item: TdnetItem) => {
-    const wasRead = readUrls.has(item.document_url)
-    const newIsRead = !wasRead
-    setReadUrls(prev => {
-      const next = new Set(prev)
-      newIsRead ? next.add(item.document_url) : next.delete(item.document_url)
-      return next
-    })
-    try {
-      const res = await fetch('/api/tdnet-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: item.document_url,
-          title: item.title,
-          pubdate: item.pubdate,
-          is_read: newIsRead,
-        }),
-      })
-      if (!res.ok) throw new Error(`${res.status}`)
-    } catch {
-      setReadUrls(prev => {
-        const next = new Set(prev)
-        wasRead ? next.add(item.document_url) : next.delete(item.document_url)
-        return next
-      })
-    }
-  }
 
   const toggleSavedLater = async (item: TdnetItem) => {
     const wasSaved = savedLaterUrls.has(item.document_url)
@@ -206,7 +149,6 @@ export default function DisclosureClient({
         const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`
         throw new Error(msg)
       }
-      // 解除時はリストからリアルタイムで除去
       if (!newSavedLater) {
         setAllDisclosures(prev => prev.filter(d => d.document_url !== item.document_url))
       }
@@ -231,69 +173,29 @@ export default function DisclosureClient({
     }
   }
 
-  const openStock = (id: string) => {
-    if (openStockId === id) {
-      setOpenStockId(null)
-    } else {
-      setOpenStockId(id)
-      setStockForm(defaultForm())
-    }
-  }
-
-  const toggleCategory = (cat: string) => {
-    setStockForm(f => ({
-      ...f,
-      categories: f.categories.includes(cat)
-        ? f.categories.filter(c => c !== cat)
-        : [...f.categories, cat],
-    }))
-  }
-
-  const saveStock = async (item: TdnetItem) => {
-    setStockForm(f => ({ ...f, saving: true }))
-    try {
-      const res = await fetch('/api/tdnet-stock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: item.title,
-          document_url: item.document_url,
-          company_name: item.company_name,
-          securities_code: item.company_code,
-          pubdate: item.pubdate,
-          note: stockForm.note,
-          category_tags: stockForm.categories,
-          importance: stockForm.importance,
-        }),
-      })
-      const data = await res.json()
-      if (data.notionUrl) {
-        setStockForm(f => ({ ...f, savedUrl: data.notionUrl, saving: false }))
-        setSavedIds(prev => new Set(prev).add(item.id))
-      } else {
-        alert(data.error ?? '保存に失敗しました')
-        setStockForm(f => ({ ...f, saving: false }))
-      }
-    } catch {
-      alert('保存に失敗しました')
-      setStockForm(f => ({ ...f, saving: false }))
-    }
+  const openRecord = (item: TdnetItem, categoryTags?: string[]) => {
+    setRecordPrefill({
+      title: item.title,
+      company: item.company_code
+        ? { code: item.company_code.slice(0, 4), name: item.company_name }
+        : null,
+      url: item.document_url,
+      category: categoryTags?.[0] ?? '',
+    })
   }
 
   const renderCard = (item: TdnetItem, opts: { categoryTags?: string[]; isBenchmarkStyle?: boolean } = {}) => {
     const { categoryTags, isBenchmarkStyle = false } = opts
     const code4 = item.company_code.slice(0, 4)
-    const isRead = readUrls.has(item.document_url)
     const isSavedLater = savedLaterUrls.has(item.document_url)
-    const isStocked = savedIds.has(item.id)
     const hasSavedLaterError = savedLaterErrorIds.has(item.id)
 
     return (
       <div
         key={item.id}
-        className={`bg-surface rounded-2xl p-4 transition-opacity ${
+        className={`bg-surface rounded-2xl p-4 ${
           isBenchmarkStyle ? 'border-2 border-accent' : 'border border-line'
-        } ${isRead && !isStocked && !isSavedLater ? 'opacity-50' : ''}`}
+        }`}
         style={{
           boxShadow: isBenchmarkStyle
             ? '0 1px 6px rgba(46,111,183,0.18)'
@@ -301,39 +203,24 @@ export default function DisclosureClient({
         }}
       >
         <div className="flex items-start gap-3">
-          <button
-            onClick={() => toggleRead(item)}
-            className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-              isRead ? 'bg-accent border-accent' : 'border-line bg-white'
-            }`}
-            aria-label={isRead ? '未処理に戻す' : '既読にする'}
-          >
-            {isRead && (
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <Link
-                href={`/company/${code4}`}
-                className="text-xs font-semibold text-accent underline underline-offset-2"
-                onClick={e => e.stopPropagation()}
-              >
-                {item.company_name}
-              </Link>
-              <span className="text-xs text-sub">{code4}</span>
-              {item.markets_string && (
-                <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">
-                  {item.markets_string}
-                </span>
-              )}
-              {isStocked && (
-                <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">ストック済</span>
-              )}
-            </div>
+            {item.company_name && (
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <Link
+                  href={`/company/${code4}`}
+                  className="text-xs font-semibold text-accent underline underline-offset-2"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {item.company_name}
+                </Link>
+                <span className="text-xs text-sub">{code4}</span>
+                {item.markets_string && (
+                  <span className="text-xs bg-soft text-accent px-2 py-0.5 rounded-full">
+                    {item.markets_string}
+                  </span>
+                )}
+              </div>
+            )}
             <a
               href={item.document_url}
               target="_blank"
@@ -342,7 +229,9 @@ export default function DisclosureClient({
             >
               {item.title}
             </a>
-            <p className="text-xs text-sub mt-1">{formatTime(item.pubdate)}</p>
+            {item.pubdate && (
+              <p className="text-xs text-sub mt-1">{formatTime(item.pubdate)}</p>
+            )}
             {categoryTags && categoryTags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {categoryTags.map(cat => (
@@ -391,91 +280,14 @@ export default function DisclosureClient({
               )}
             </button>
             <button
-              onClick={() => openStock(item.id)}
-              className="text-xs text-accent border border-accent rounded-xl px-2.5 h-7 flex items-center justify-center hover:bg-soft transition-colors"
+              onClick={() => openRecord(item, categoryTags)}
+              className="text-xs text-white border border-primary rounded-xl px-2.5 h-7 flex items-center justify-center hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: '#1B3A5B' }}
             >
-              ストック
+              記録する
             </button>
           </div>
         </div>
-
-        {openStockId === item.id && (
-          <div className="mt-4 pt-4 border-t border-line space-y-4">
-            {stockForm.savedUrl ? (
-              <div className="bg-soft rounded-xl p-3 text-center">
-                <p className="text-sm text-accent font-medium">Notionに保存しました</p>
-                <a
-                  href={stockForm.savedUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-accent underline mt-1 block"
-                >
-                  Notionで開く
-                </a>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-xs font-medium text-sub mb-1.5">
-                    メモ・自社への示唆
-                  </label>
-                  <textarea
-                    value={stockForm.note}
-                    onChange={e => setStockForm(f => ({ ...f, note: e.target.value }))}
-                    rows={3}
-                    className="w-full border border-line rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-accent resize-none bg-white"
-                    placeholder="気づいたこと・要点・自社への示唆など..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-sub mb-1.5">カテゴリ</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PREDEFINED_CATEGORIES.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => toggleCategory(cat)}
-                        className={`text-xs px-3 py-1.5 rounded-full transition-colors ${
-                          stockForm.categories.includes(cat) ? 'bg-accent text-white' : 'bg-line text-sub'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-sub mb-1.5">重要度</label>
-                  <div className="flex gap-2">
-                    {IMPORTANCE_OPTIONS.map(opt => (
-                      <button
-                        key={opt}
-                        onClick={() => setStockForm(f => ({ ...f, importance: opt }))}
-                        className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-                          stockForm.importance === opt
-                            ? opt === '高'
-                              ? 'bg-danger text-white'
-                              : opt === '中'
-                              ? 'bg-orange-400 text-white'
-                              : 'bg-sub text-white'
-                            : 'bg-line text-sub'
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <button
-                  onClick={() => saveStock(item)}
-                  disabled={stockForm.saving}
-                  className="w-full bg-accent text-white rounded-xl py-3 text-sm font-medium disabled:opacity-40 hover:bg-primary transition-colors"
-                >
-                  {stockForm.saving ? 'Notionに保存中...' : 'Notionに保存'}
-                </button>
-              </>
-            )}
-          </div>
-        )}
       </div>
     )
   }
@@ -549,6 +361,11 @@ export default function DisclosureClient({
             </div>
           ) : (
             <div className="space-y-7">
+              {/* 冒頭の一言 */}
+              <p className="text-xs text-sub text-center pt-1">
+                気になったものだけ、記録に残しましょう
+              </p>
+
               {/* Section A: ベンチマーク企業の開示 */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -584,14 +401,6 @@ export default function DisclosureClient({
                   </div>
                 )}
               </div>
-
-              {/* 完了インジケーター */}
-              {isComplete && (
-                <div className="text-center py-6 border-t border-line">
-                  <p className="text-sm font-medium text-accent">今日のブリーフィング完了</p>
-                  <p className="text-xs text-sub mt-1">お疲れさまでした</p>
-                </div>
-              )}
             </div>
           )
         ) : (
@@ -617,6 +426,9 @@ export default function DisclosureClient({
             </div>
           ) : (
             <div className="space-y-5">
+              <p className="text-xs text-sub text-center pt-1">
+                じっくり読んで、気になったものを記録しましょう
+              </p>
               {laterDateGroups.map(({ date, items }) => (
                 <div key={date}>
                   <p className="text-xs font-semibold text-sub mb-2 pb-1 border-b border-line">
@@ -632,6 +444,16 @@ export default function DisclosureClient({
           )
         )}
       </div>
+
+      {/* 記録フォームモーダル（ブリーフィングカードからprefill付きで開く） */}
+      {recordPrefill && (
+        <RecordCardModal
+          onClose={() => setRecordPrefill(null)}
+          onSaved={() => setRecordPrefill(null)}
+          initialType="news_case"
+          prefill={recordPrefill}
+        />
+      )}
     </div>
   )
 }

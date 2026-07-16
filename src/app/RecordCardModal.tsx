@@ -15,9 +15,18 @@ interface Company {
   market: string | null
 }
 
+interface Prefill {
+  title?: string
+  company?: { code: string; name: string } | null
+  url?: string
+  category?: string
+}
+
 interface Props {
   onClose: () => void
   onSaved: () => void
+  initialType?: CardType
+  prefill?: Prefill
 }
 
 // 会社名検索コンポーネント
@@ -80,12 +89,12 @@ function CompanySearch({
 }
 
 // ニュース・事例フォーム
-function NewsCaseForm({ onClose, onSaved }: Props) {
-  const [title, setTitle] = useState('')
+function NewsCaseForm({ onClose, onSaved, prefill }: Props) {
+  const [title, setTitle] = useState(prefill?.title ?? '')
   const [learning, setLearning] = useState('')
-  const [company, setCompany] = useState<{ code: string; name: string } | null>(null)
-  const [category, setCategory] = useState('')
-  const [url, setUrl] = useState('')
+  const [company, setCompany] = useState<{ code: string; name: string } | null>(prefill?.company ?? null)
+  const [category, setCategory] = useState(prefill?.category ?? '')
+  const [url, setUrl] = useState(prefill?.url ?? '')
   const [syncNotion, setSyncNotion] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -459,8 +468,8 @@ const TYPE_OPTIONS: { type: CardType; label: string; sub: string; emoji: string 
   { type: 'career', label: 'キャリア', sub: '経験メモ・やりたいこと', emoji: '✨' },
 ]
 
-export default function RecordCardModal({ onClose, onSaved }: Props) {
-  const [selected, setSelected] = useState<CardType | null>(null)
+export default function RecordCardModal({ onClose, onSaved, initialType, prefill }: Props) {
+  const [selected, setSelected] = useState<CardType | null>(initialType ?? null)
   const [saved, setSaved] = useState(false)
 
   // 背面スクロールを止める
@@ -501,7 +510,7 @@ export default function RecordCardModal({ onClose, onSaved }: Props) {
           {!saved && selected !== null && (
             <div className="flex items-center gap-2 mb-4">
               <button
-                onClick={() => setSelected(null)}
+                onClick={() => initialType ? onClose() : setSelected(null)}
                 className="text-sub text-sm min-w-[44px] min-h-[44px] flex items-center"
               >
                 ← 戻る
@@ -563,7 +572,7 @@ export default function RecordCardModal({ onClose, onSaved }: Props) {
         ) : (
           /* 各フォーム（タイトルは固定ヘッダーに移動済み） */
           <>
-            {selected === 'news_case' && <NewsCaseForm onClose={onClose} onSaved={handleSaved} />}
+            {selected === 'news_case' && <NewsCaseForm onClose={onClose} onSaved={handleSaved} prefill={prefill} />}
             {selected === 'connection' && <ConnectionForm onClose={onClose} onSaved={handleSaved} />}
             {selected === 'company' && <CompanyFormStep onClose={onClose} />}
             {selected === 'career' && <CareerForm onClose={onClose} onSaved={handleSaved} />}
