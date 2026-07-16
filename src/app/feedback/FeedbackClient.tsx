@@ -1,14 +1,16 @@
 'use client'
 import { useState, useMemo } from 'react'
-import type { WeeklyReport } from './page'
+import type { WeeklyReport, MonthlyReport } from './page'
 import PageHeader from '@/components/PageHeader'
 
 const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日']
+const SERIF = "'Hiragino Mincho ProN', 'Yu Mincho', serif"
 
 interface Props {
   checkCounts: Record<string, number>
   todayJST: string
   weeklyReports: WeeklyReport[]
+  monthlyReports: MonthlyReport[]
 }
 
 function calcStreak(checkCounts: Record<string, number>, todayJST: string): number {
@@ -42,10 +44,16 @@ function formatWeekLabel(weekStart: string): string {
   return `${y}年${m}月${d}日〜${em}月${ed}日`
 }
 
-export default function FeedbackClient({ checkCounts, todayJST, weeklyReports }: Props) {
+function formatMonthLabel(monthStart: string): string {
+  const [y, m] = monthStart.split('-').map(Number)
+  return `${y}年${m}月`
+}
+
+export default function FeedbackClient({ checkCounts, todayJST, weeklyReports, monthlyReports }: Props) {
   const today = new Date(todayJST)
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
+  const [activeTab, setActiveTab] = useState<'weekly' | 'monthly'>('weekly')
 
   const cells = useMemo(() => buildCalendarCells(viewYear, viewMonth), [viewYear, viewMonth])
 
@@ -74,7 +82,7 @@ export default function FeedbackClient({ checkCounts, todayJST, weeklyReports }:
 
       <div className="px-4 py-4 space-y-6">
 
-        {/* カレンダーセクション */}
+        {/* 記録カレンダー */}
         <section>
           <p className="text-xs font-medium text-sub tracking-widest mb-3">記録カレンダー</p>
 
@@ -169,74 +177,118 @@ export default function FeedbackClient({ checkCounts, todayJST, weeklyReports }:
           </div>
         </section>
 
-        {/* 週次レポートセクション */}
-        <section>
-          <p className="text-xs font-medium text-sub tracking-widest mb-3">週次レポート</p>
-          {weeklyReports.length === 0 ? (
-            <div
-              className="bg-white rounded-2xl border border-line p-5 text-center"
-              style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
-            >
-              <p className="text-2xl mb-2">🔮</p>
-              <p
-                className="text-sm font-semibold text-primary mb-1"
-                style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-              >
-                まだレポートがありません
-              </p>
-              <p className="text-xs text-sub leading-relaxed">
-                毎週月曜の朝、先週の記録をもとに<br />AIがおさらいを届けます。<br />
-                記録を積み上げていきましょう。
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {weeklyReports.map(report => (
-                <div
-                  key={report.id}
-                  className="bg-white rounded-2xl border border-line p-4"
-                  style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <p
-                      className="text-xs font-semibold text-primary"
-                      style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-                    >
-                      {formatWeekLabel(report.week_start)}
-                    </p>
-                    {report.card_count > 0 && (
-                      <span className="text-[10px] bg-soft text-accent px-2 py-0.5 rounded-full">
-                        {report.card_count}枚の記録
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-[#1A2332] leading-relaxed whitespace-pre-wrap">
-                    {report.report}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* 月次レポートセクション（準備中） */}
+        {/* 週次・月次タブ */}
         <section className="pb-8">
-          <p className="text-xs font-medium text-sub tracking-widest mb-3">月次コーチング</p>
-          <div
-            className="bg-white rounded-2xl border border-line p-5 text-center"
-            style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
-          >
-            <p className="text-2xl mb-2">✨</p>
-            <p
-              className="text-sm font-semibold text-primary mb-1"
-              style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+          <div className="flex gap-1.5 mb-4">
+            <button
+              onClick={() => setActiveTab('weekly')}
+              className={`flex-1 text-xs py-2 rounded-full transition-colors font-medium ${
+                activeTab === 'weekly' ? 'bg-primary text-white' : 'bg-line text-sub'
+              }`}
             >
-              準備中
-            </p>
-            <p className="text-xs text-sub leading-relaxed">
-              月次コーチングレポートは第3段階で実装予定です。
-            </p>
+              週次レポート
+              {weeklyReports.length > 0 && (
+                <span className={`ml-1 text-[10px] ${activeTab === 'weekly' ? 'opacity-70' : 'text-accent'}`}>
+                  {weeklyReports.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('monthly')}
+              className={`flex-1 text-xs py-2 rounded-full transition-colors font-medium ${
+                activeTab === 'monthly' ? 'bg-primary text-white' : 'bg-line text-sub'
+              }`}
+            >
+              月次コーチング
+              {monthlyReports.length > 0 && (
+                <span className={`ml-1 text-[10px] ${activeTab === 'monthly' ? 'opacity-70' : 'text-accent'}`}>
+                  {monthlyReports.length}
+                </span>
+              )}
+            </button>
           </div>
+
+          {activeTab === 'weekly' ? (
+            weeklyReports.length === 0 ? (
+              <div
+                className="bg-white rounded-2xl border border-line p-5 text-center"
+                style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+              >
+                <p className="text-2xl mb-2">🔮</p>
+                <p className="text-sm font-semibold text-primary mb-1" style={{ fontFamily: SERIF }}>
+                  まだレポートがありません
+                </p>
+                <p className="text-xs text-sub leading-relaxed">
+                  毎週月曜の朝、先週の記録をもとに<br />AIがおさらいを届けます。<br />
+                  記録を積み上げていきましょう。
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {weeklyReports.map(report => (
+                  <div
+                    key={report.id}
+                    className="bg-white rounded-2xl border border-line p-4"
+                    style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-primary" style={{ fontFamily: SERIF }}>
+                        {formatWeekLabel(report.week_start)}
+                      </p>
+                      {report.card_count > 0 && (
+                        <span className="text-[10px] bg-soft text-accent px-2 py-0.5 rounded-full">
+                          {report.card_count}枚の記録
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#1A2332] leading-relaxed whitespace-pre-wrap">
+                      {report.report}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            monthlyReports.length === 0 ? (
+              <div
+                className="bg-white rounded-2xl border border-line p-5 text-center"
+                style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+              >
+                <p className="text-2xl mb-2">✨</p>
+                <p className="text-sm font-semibold text-primary mb-1" style={{ fontFamily: SERIF }}>
+                  まだレポートがありません
+                </p>
+                <p className="text-xs text-sub leading-relaxed">
+                  毎月1日の朝、前月の記録と目標をもとに<br />AIがコーチングレポートを届けます。<br />
+                  記録を積み上げていきましょう。
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {monthlyReports.map(report => (
+                  <div
+                    key={report.id}
+                    className="bg-white rounded-2xl border border-line p-4"
+                    style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold text-primary" style={{ fontFamily: SERIF }}>
+                        {formatMonthLabel(report.month_start)}のコーチング
+                      </p>
+                      {report.card_count > 0 && (
+                        <span className="text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">
+                          {report.card_count}枚の記録
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#1A2332] leading-relaxed whitespace-pre-wrap">
+                      {report.report}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </section>
 
       </div>

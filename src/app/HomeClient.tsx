@@ -53,6 +53,7 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [showStarCelebration, setShowStarCelebration] = useState(false)
   const [showReportBadge, setShowReportBadge] = useState(false)
+  const [showMonthlyBadge, setShowMonthlyBadge] = useState(false)
 
   useEffect(() => {
     const key = 'ir_skillup_stars_v2'
@@ -72,11 +73,24 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
     if (seen !== stats.latestReportWeek) setShowReportBadge(true)
   }, [stats.latestReportWeek])
 
+  useEffect(() => {
+    if (!stats.latestMonthlyReportMonth) return
+    const seen = localStorage.getItem('ir_last_seen_monthly_report')
+    if (seen !== stats.latestMonthlyReportMonth) setShowMonthlyBadge(true)
+  }, [stats.latestMonthlyReportMonth])
+
   const dismissReportBadge = () => {
     if (stats.latestReportWeek) {
       localStorage.setItem('ir_last_seen_weekly_report', stats.latestReportWeek)
     }
     setShowReportBadge(false)
+  }
+
+  const dismissMonthlyBadge = () => {
+    if (stats.latestMonthlyReportMonth) {
+      localStorage.setItem('ir_last_seen_monthly_report', stats.latestMonthlyReportMonth)
+    }
+    setShowMonthlyBadge(false)
   }
 
   const displayStarSlots = Math.max(stats.starCount + 2, 4)
@@ -152,6 +166,27 @@ export default function HomeClient({ stats }: { stats: HomeStats }) {
           </span>
         </div>
       </div>
+
+      {/* 月次コーチングバッジ（週次より特別） */}
+      {showMonthlyBadge && (
+        <div className="px-4 mb-2">
+          <Link
+            href="/feedback"
+            onClick={dismissMonthlyBadge}
+            className="flex items-center gap-2 rounded-xl px-4 py-3 active:opacity-80 transition-opacity"
+            style={{ backgroundColor: '#1B3A5B' }}
+          >
+            <span className="text-base leading-none">✨</span>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-white leading-snug">今月のコーチングが届きました</p>
+              <p className="text-[10px] text-white/60 mt-0.5">振り返りレポートで確認する</p>
+            </div>
+            <svg className="w-4 h-4 text-white/60 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      )}
 
       {/* 週次レポートバッジ */}
       {showReportBadge && (

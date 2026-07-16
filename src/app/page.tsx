@@ -13,6 +13,7 @@ export interface HomeStats {
   nextStarIn: number
   todayCount: number
   latestReportWeek: string | null
+  latestMonthlyReportMonth: string | null
 }
 
 function calcStreak(dates: string[]): number {
@@ -39,7 +40,7 @@ function calcStreak(dates: string[]): number {
 export default async function HomePage() {
   const todayStr = new Date(new Date().getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-  const [memosResult, recordCardsResult, companyNotesResult, latestReportResult] =
+  const [memosResult, recordCardsResult, companyNotesResult, latestReportResult, latestMonthlyResult] =
     await Promise.all([
       supabase.from('memos').select('*', { count: 'exact', head: true }),
       supabase.from('record_cards').select('card_type, recorded_on'),
@@ -48,6 +49,12 @@ export default async function HomePage() {
         .from('weekly_reports')
         .select('week_start')
         .order('week_start', { ascending: false })
+        .limit(1)
+        .single(),
+      supabase
+        .from('monthly_reports')
+        .select('month_start')
+        .order('month_start', { ascending: false })
         .limit(1)
         .single(),
     ])
@@ -78,6 +85,7 @@ export default async function HomePage() {
     nextStarIn,
     todayCount,
     latestReportWeek: latestReportResult.data?.week_start ?? null,
+    latestMonthlyReportMonth: latestMonthlyResult.data?.month_start ?? null,
   }
   return <HomeClient stats={stats} />
 }

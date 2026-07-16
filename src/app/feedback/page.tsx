@@ -11,13 +11,25 @@ export interface WeeklyReport {
   created_at: string
 }
 
+export interface MonthlyReport {
+  id: string
+  month_start: string
+  report: string
+  card_count: number
+  created_at: string
+}
+
 export default async function FeedbackPage() {
-  const [recordCardsResult, weeklyReportsResult] = await Promise.all([
+  const [recordCardsResult, weeklyReportsResult, monthlyReportsResult] = await Promise.all([
     supabase.from('record_cards').select('recorded_on'),
     supabase
       .from('weekly_reports')
       .select('id, week_start, report, card_count, created_at')
       .order('week_start', { ascending: false }),
+    supabase
+      .from('monthly_reports')
+      .select('id, month_start, report, card_count, created_at')
+      .order('month_start', { ascending: false }),
   ])
 
   const checkCounts: Record<string, number> = {}
@@ -33,6 +45,7 @@ export default async function FeedbackPage() {
       checkCounts={checkCounts}
       todayJST={todayJST}
       weeklyReports={(weeklyReportsResult.data ?? []) as WeeklyReport[]}
+      monthlyReports={(monthlyReportsResult.data ?? []) as MonthlyReport[]}
     />
   )
 }
