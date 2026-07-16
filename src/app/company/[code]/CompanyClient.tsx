@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { CompanyInfo, CompanyNotes, CompanyMemo } from './page'
 
 const IMPORTANCE_STYLE: Record<string, string> = {
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export default function CompanyClient({ company, initialNotes, initialMemos }: Props) {
+  const router = useRouter()
   const [notes, setNotes] = useState<CompanyNotes | null>(initialNotes)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState<string | null>(null)
@@ -131,11 +133,11 @@ export default function CompanyClient({ company, initialNotes, initialMemos }: P
       <header className="sticky top-0 bg-white z-10 border-b border-line">
         <div className="h-0.5 bg-primary" />
         <div className="px-4 pt-3 pb-3 flex items-center gap-3">
-          <Link href="/disclosure" className="text-sub hover:text-primary">
+          <button onClick={() => router.back()} className="flex items-center justify-center w-8 h-8 -ml-1 text-sub hover:text-primary transition-colors active:opacity-70" aria-label="戻る">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-          </Link>
+          </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold text-primary truncate">{company.name}</h1>
             <p className="text-xs text-sub">{company.code}{company.market ? `・${company.market}` : ''}</p>

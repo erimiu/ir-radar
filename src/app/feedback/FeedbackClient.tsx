@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import type { WeeklyReport } from './page'
+import PageHeader from '@/components/PageHeader'
 
 const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日']
 
@@ -69,64 +70,9 @@ export default function FeedbackClient({ checkCounts, todayJST, weeklyReports }:
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 bg-white z-10 border-b border-line">
-        <div className="h-0.5 bg-primary" />
-        <div className="px-4 pt-3 pb-3">
-          <h1 className="text-xl font-bold tracking-tight text-primary">振り返りレポート</h1>
-        </div>
-      </header>
+      <PageHeader title="振り返りレポート" />
 
       <div className="px-4 py-4 space-y-6">
-
-        {/* 週次レポートセクション */}
-        <section>
-          <p className="text-xs font-medium text-sub tracking-widest mb-3">週次レポート</p>
-          {weeklyReports.length === 0 ? (
-            <div
-              className="bg-white rounded-2xl border border-line p-5 text-center"
-              style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
-            >
-              <p className="text-2xl mb-2">🔮</p>
-              <p
-                className="text-sm font-semibold text-primary mb-1"
-                style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-              >
-                まだレポートがありません
-              </p>
-              <p className="text-xs text-sub leading-relaxed">
-                毎週月曜の朝、先週の記録をもとに<br />AIがおさらいを届けます。<br />
-                記録を積み上げていきましょう。
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {weeklyReports.map(report => (
-                <div
-                  key={report.id}
-                  className="bg-white rounded-2xl border border-line p-4"
-                  style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <p
-                      className="text-xs font-semibold text-primary"
-                      style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
-                    >
-                      {formatWeekLabel(report.week_start)}
-                    </p>
-                    {report.card_count > 0 && (
-                      <span className="text-[10px] bg-soft text-accent px-2 py-0.5 rounded-full">
-                        {report.card_count}枚の記録
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-[#1A2332] leading-relaxed whitespace-pre-wrap">
-                    {report.report}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
 
         {/* カレンダーセクション */}
         <section>
@@ -221,6 +167,56 @@ export default function FeedbackClient({ checkCounts, todayJST, weeklyReports }:
               <span className="text-[10px] text-sub">今日</span>
             </div>
           </div>
+        </section>
+
+        {/* 週次レポートセクション */}
+        <section>
+          <p className="text-xs font-medium text-sub tracking-widest mb-3">週次レポート</p>
+          {weeklyReports.length === 0 ? (
+            <div
+              className="bg-white rounded-2xl border border-line p-5 text-center"
+              style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+            >
+              <p className="text-2xl mb-2">🔮</p>
+              <p
+                className="text-sm font-semibold text-primary mb-1"
+                style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+              >
+                まだレポートがありません
+              </p>
+              <p className="text-xs text-sub leading-relaxed">
+                毎週月曜の朝、先週の記録をもとに<br />AIがおさらいを届けます。<br />
+                記録を積み上げていきましょう。
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {weeklyReports.map(report => (
+                <div
+                  key={report.id}
+                  className="bg-white rounded-2xl border border-line p-4"
+                  style={{ boxShadow: '0 1px 3px rgba(27,58,91,0.06)' }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <p
+                      className="text-xs font-semibold text-primary"
+                      style={{ fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', serif" }}
+                    >
+                      {formatWeekLabel(report.week_start)}
+                    </p>
+                    {report.card_count > 0 && (
+                      <span className="text-[10px] bg-soft text-accent px-2 py-0.5 rounded-full">
+                        {report.card_count}枚の記録
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-[#1A2332] leading-relaxed whitespace-pre-wrap">
+                    {report.report}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* 月次レポートセクション（準備中） */}

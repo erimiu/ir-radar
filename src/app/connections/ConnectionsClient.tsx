@@ -1,18 +1,11 @@
 'use client'
 import type { ConnectionCard } from './page'
+import PageHeader from '@/components/PageHeader'
 
 export default function ConnectionsClient({ connections }: { connections: ConnectionCard[] }) {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 bg-white z-10 border-b border-line">
-        <div className="h-0.5 bg-primary" />
-        <div className="px-4 pt-3 pb-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-tight text-primary">つながり</h1>
-            <span className="text-xs text-sub">{connections.length}人</span>
-          </div>
-        </div>
-      </header>
+      <PageHeader title="つながり" right={<span className="text-xs text-sub">{connections.length}人</span>} />
 
       <div className="flex-1 px-4 py-3">
         {connections.length === 0 ? (

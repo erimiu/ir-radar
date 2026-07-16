@@ -1,19 +1,12 @@
 'use client'
 import Link from 'next/link'
 import type { CompanyNoteItem } from './page'
+import PageHeader from '@/components/PageHeader'
 
 export default function CompanyNotesClient({ items }: { items: CompanyNoteItem[] }) {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 bg-white z-10 border-b border-line">
-        <div className="h-0.5 bg-primary" />
-        <div className="px-4 pt-3 pb-3">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold tracking-tight text-primary">会社情報</h1>
-            <span className="text-xs text-sub">{items.length}社</span>
-          </div>
-        </div>
-      </header>
+      <PageHeader title="会社情報" right={<span className="text-xs text-sub">{items.length}社</span>} />
 
       <div className="flex-1 px-4 py-3">
         {items.length === 0 ? (

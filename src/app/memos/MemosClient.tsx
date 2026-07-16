@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import PageHeader from '@/components/PageHeader'
 
 interface MemoWithItem {
   id: string
@@ -55,12 +56,7 @@ export default function MemosClient({ memos }: Props) {
   if (memos.length === 0) {
     return (
       <div className="flex flex-col min-h-screen">
-        <header className="sticky top-0 bg-white z-10 border-b border-line">
-          <div className="h-0.5 bg-primary" />
-          <div className="px-4 pt-3 pb-3">
-            <h1 className="text-xl font-bold tracking-tight text-primary">ストック</h1>
-          </div>
-        </header>
+        <PageHeader title="ストック" />
         <div className="flex-1 flex flex-col items-center justify-center py-20 text-center text-sub">
           <p className="text-sm">ストックがまだありません</p>
           <p className="text-xs mt-1">開示画面から「ストック」ボタンで保存すると表示されます</p>
@@ -71,45 +67,36 @@ export default function MemosClient({ memos }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 bg-white z-10 border-b border-line">
-        <div className="h-0.5 bg-primary" />
-        <div className="px-4 pt-3 pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl font-bold tracking-tight text-primary">ストック</h1>
-            <span className="text-xs text-sub">{memos.length}件</span>
-          </div>
-
-          {/* カテゴリフィルター（横スクロール） */}
-          <div className="-mx-4 px-4 overflow-x-auto">
-            <div className="flex gap-1.5 pb-0.5 w-max">
+      <PageHeader title="ストック" right={<span className="text-xs text-sub">{memos.length}件</span>}>
+        <div className="-mx-4 px-4 overflow-x-auto">
+          <div className="flex gap-1.5 pb-0.5 w-max">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-colors ${
+                selectedCategory === null ? 'bg-primary text-white' : 'bg-line text-sub'
+              }`}
+            >
+              すべて {memos.length}
+            </button>
+            {CATEGORY_FILTERS.map(cat => (
               <button
-                onClick={() => setSelectedCategory(null)}
+                key={cat}
+                onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
                 className={`text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-colors ${
-                  selectedCategory === null ? 'bg-primary text-white' : 'bg-line text-sub'
+                  selectedCategory === cat ? 'bg-primary text-white' : 'bg-line text-sub'
                 }`}
               >
-                すべて {memos.length}
+                {cat}
+                {categoryCounts[cat] > 0 && (
+                  <span className={`ml-1 ${selectedCategory === cat ? 'opacity-80' : 'text-accent'}`}>
+                    {categoryCounts[cat]}
+                  </span>
+                )}
               </button>
-              {CATEGORY_FILTERS.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-                  className={`text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-colors ${
-                    selectedCategory === cat ? 'bg-primary text-white' : 'bg-line text-sub'
-                  }`}
-                >
-                  {cat}
-                  {categoryCounts[cat] > 0 && (
-                    <span className={`ml-1 ${selectedCategory === cat ? 'opacity-80' : 'text-accent'}`}>
-                      {categoryCounts[cat]}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
-      </header>
+      </PageHeader>
 
       <div className="flex-1 px-4 py-3">
         {filteredMemos.length === 0 ? (

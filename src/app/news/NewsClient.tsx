@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import type { NewsItem } from './page'
+import PageHeader from '@/components/PageHeader'
 
 const CATEGORIES = [
   '決算説明資料', '株主優待', '配当', '自社株買い',
@@ -25,43 +26,36 @@ export default function NewsClient({ items }: { items: NewsItem[] }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 bg-white z-10 border-b border-line">
-        <div className="h-0.5 bg-primary" />
-        <div className="px-4 pt-3 pb-3">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-xl font-bold tracking-tight text-primary">ニュース・事例</h1>
-            <span className="text-xs text-sub">{items.length}件</span>
-          </div>
-          <div className="-mx-4 px-4 overflow-x-auto">
-            <div className="flex gap-1.5 pb-0.5 w-max">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-colors ${
-                  selectedCategory === null ? 'bg-primary text-white' : 'bg-line text-sub'
-                }`}
-              >
-                すべて {items.length}
-              </button>
-              {CATEGORIES.map(cat => (
-                categoryCounts[cat] > 0 && (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
-                    className={`text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-colors ${
-                      selectedCategory === cat ? 'bg-primary text-white' : 'bg-line text-sub'
-                    }`}
-                  >
-                    {cat}
-                    <span className={`ml-1 ${selectedCategory === cat ? 'opacity-80' : 'text-accent'}`}>
-                      {categoryCounts[cat]}
-                    </span>
-                  </button>
-                )
-              ))}
-            </div>
+      <PageHeader title="ニュース・事例" right={<span className="text-xs text-sub">{items.length}件</span>}>
+        <div className="-mx-4 px-4 overflow-x-auto">
+          <div className="flex gap-1.5 pb-0.5 w-max">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-colors ${
+                selectedCategory === null ? 'bg-primary text-white' : 'bg-line text-sub'
+              }`}
+            >
+              すべて {items.length}
+            </button>
+            {CATEGORIES.map(cat => (
+              categoryCounts[cat] > 0 && (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat === selectedCategory ? null : cat)}
+                  className={`text-xs px-3 py-1.5 rounded-full flex-shrink-0 transition-colors ${
+                    selectedCategory === cat ? 'bg-primary text-white' : 'bg-line text-sub'
+                  }`}
+                >
+                  {cat}
+                  <span className={`ml-1 ${selectedCategory === cat ? 'opacity-80' : 'text-accent'}`}>
+                    {categoryCounts[cat]}
+                  </span>
+                </button>
+              )
+            ))}
           </div>
         </div>
-      </header>
+      </PageHeader>
 
       <div className="flex-1 px-4 py-3">
         {filtered.length === 0 ? (

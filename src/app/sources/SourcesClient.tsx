@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import type { Source, Category, FetchType } from '@/types'
 import { CATEGORY_LABELS } from '@/types'
+import PageHeader from '@/components/PageHeader'
 
 const TIER_LABELS: Record<number, string> = {
   1: '第1階層：業務直結・必須ウォッチ',
@@ -58,18 +59,20 @@ export default function SourcesClient({ initialSources }: Props) {
     .filter(g => g.items.length > 0)
 
   return (
-    <div className="px-4 py-6">
-      <div className="h-0.5 bg-primary -mx-4 -mt-6 mb-6" />
+    <div className="flex flex-col min-h-screen">
+      <PageHeader
+        title="ソース"
+        right={
+          <button
+            onClick={() => setShowForm(v => !v)}
+            className="text-sm text-white bg-accent rounded-xl px-4 min-h-[36px] flex items-center hover:bg-primary transition-colors"
+          >
+            ＋ 追加
+          </button>
+        }
+      />
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold tracking-tight text-primary">ソース</h1>
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="text-sm text-white bg-accent rounded-xl px-4 min-h-[44px] flex items-center hover:bg-primary transition-colors"
-        >
-          ＋ 追加
-        </button>
-      </div>
+      <div className="flex-1 px-4 py-4">
 
       {showForm && (
         <form onSubmit={addSource} className="bg-surface rounded-2xl p-4 mb-6 space-y-3 border border-line">
@@ -197,6 +200,8 @@ export default function SourcesClient({ initialSources }: Props) {
           <p className="text-xs mt-1">「＋ 追加」から登録してください</p>
         </div>
       )}
+
+      </div>
     </div>
   )
 }
