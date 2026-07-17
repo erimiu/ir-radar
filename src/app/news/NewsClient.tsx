@@ -5,8 +5,10 @@ import PageHeader from '@/components/PageHeader'
 
 const CATEGORIES = [
   '決算説明資料', '株主優待', '配当', '自社株買い',
-  'プライム移行', '株式分割', '有事対応', 'IR活動', 'その他',
+  'プライム移行', '株式分割', '有事対応', 'IR活動', 'AI活用', 'その他',
 ]
+
+const NOTION_DB_URL = process.env.NEXT_PUBLIC_NOTION_DB_URL
 
 export default function NewsClient({ items }: { items: NewsItem[] }) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -26,7 +28,24 @@ export default function NewsClient({ items }: { items: NewsItem[] }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <PageHeader title="ニュース・事例" right={<span className="text-xs text-sub">{items.length}件</span>}>
+      <PageHeader
+        title="ニュース・事例"
+        right={
+          <div className="flex items-center gap-2">
+            {NOTION_DB_URL && (
+              <a
+                href={NOTION_DB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-accent border border-accent/40 rounded-lg px-2.5 py-1 hover:bg-soft transition-colors flex-shrink-0"
+              >
+                Notionで見る
+              </a>
+            )}
+            <span className="text-xs text-sub flex-shrink-0">{items.length}件</span>
+          </div>
+        }
+      >
         <div className="-mx-4 px-4 overflow-x-auto">
           <div className="flex gap-1.5 pb-0.5 w-max">
             <button

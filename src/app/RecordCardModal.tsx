@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 
 const CATEGORIES = [
   '決算説明資料', '株主優待', '配当', '自社株買い',
-  'プライム移行', '株式分割', '有事対応', 'IR活動', 'その他',
+  'プライム移行', '株式分割', '有事対応', 'IR活動', 'AI活用', 'その他',
 ]
 
 type CardType = 'news_case' | 'connection' | 'company' | 'career'
